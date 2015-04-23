@@ -40,7 +40,7 @@
    if(TOS_NODE_ID == 0){
     if (!busy) {
 		BlinkToRadioMsg* btrpkt = (BlinkToRadioMsg*)(call Packet.getPayload(&pkt, sizeof (BlinkToRadioMsg)));
-		btrpkt->nodeid = TOS_NODE_ID +1;
+		btrpkt->nodeid = TOS_NODE_ID;
 		btrpkt->counter = counter;
 		btrpkt->randvalue = rand() % 10;
 		if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(BlinkToRadioMsg)) == SUCCESS) {
@@ -70,7 +70,7 @@ event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len) {
 		    btrpktR->randvalue = btrpkt->randvalue;
 			if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(BlinkToRadioMsg)) == SUCCESS) {
 				busy = TRUE;
-				dbg("BlinkToRadio", "Message Sent from %d %d.\n", TOS_NODE_ID, btrpktR->counter);
+				dbg("BlinkToRadio", "Message Sent from %d with counter %d.\n", TOS_NODE_ID, btrpktR->counter);
 			}
 		}
 
