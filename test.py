@@ -30,5 +30,5 @@ t.getNode(0).bootAtTime(100001);
 t.getNode(1).bootAtTime(800008);
 t.getNode(2).bootAtTime(1800009);
 
-for i in range(100):
+for i in range(1000):
   t.runNextEvent()
