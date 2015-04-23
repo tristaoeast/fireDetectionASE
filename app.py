@@ -51,30 +51,28 @@ for line in noise:
 print "Creating noise model for server"
 t.getNode(0).createNoiseModel()
 
-
 for nid in set(routers):
   print "Creating noise model for router", nid;
   t.getNode(nid).createNoiseModel()
-  print "Booting routing node ",nid;
-  t.getNode(nid).bootAtTime((4 + t.ticksPerSecond() / 10) * nid + 122342)
 
 for nid in set(sensors):
   print "Creating noise model for sensor", nid;
   t.getNode(nid).createNoiseModel()
-  print "Booting sensor node ", nid;
-  t.getNode(nid).bootAtTime((4 + t.ticksPerSecond() / 10) * nid + 122342)
+
 
 print "Booting server"
 t.getNode(0).bootAtTime(12234)
 
+counter = 1
 for nid in set(routers):
   print "Booting routing node ",nid;
-  t.getNode(nid).bootAtTime((4 + t.ticksPerSecond() / 10) * nid + 122342)
+  t.getNode(nid).bootAtTime((4 + t.ticksPerSecond() / 10) * counter + 122342)
+  counter += 1
 
 for nid in set(sensors):
   print "Booting sensor node ", nid;
-  t.getNode(nid).bootAtTime((4 + t.ticksPerSecond() / 10) * nid + 122342)
-
+  t.getNode(nid).bootAtTime((4 + t.ticksPerSecond() / 10) * counter + 122342)
+  counter += 1
 
 # for nid in range(1,2):
 #   print "Booting routing node ",nid;
