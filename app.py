@@ -13,9 +13,12 @@ class Server():
         self.radio = self.tossim.radio()
         self.topo = "topo.txt"
         self.noise = "meyer-heavy.txt"
+        self.debug = open("debug.txt", "w")
+        self.log = open("log.txt", "w")
+        self.log.close()
         self.sensors = Set()
         self.routers = Set()
-        self.tossim.addChannel("BlinkToRadio", sys.stdout)
+        self.tossim.addChannel("debug", self.debug)
         self.loadTopology(self.topo, self.radio, self.routers, self.sensors)
         self.loadNoiseModel(
             self.noise, self.tossim, self.routers, self.sensors)
@@ -33,7 +36,8 @@ class Server():
         for line in f:
             s = line.split()
             if s:
-                print " ", s[0], " ", s[1], " ", s[2]
+                #print " ", s[0], " ", s[1], " ", s[2]
+                self.debug.write(s[0] + " " + s[1] + " " + s[2] + "\n")
                 radio.add(int(s[0]), int(s[1]), float(s[2]))
                 # Verify node type and add to respective set
                 if 0 != int(s[0]):
@@ -61,48 +65,97 @@ class Server():
                 for nid in set(sensors):
                     tossim.getNode(nid).addNoiseTraceReading(val)
 
-        print "Creating noise model for server"
+        #print "Creating noise model for server"
+        self.debug.write("Creating noise model for server" + "\n")
         tossim.getNode(0).createNoiseModel()
         for nid in set(routers):
-            print "Creating noise model for router", nid
+            #print "Creating noise model for router", nid
+            self.debug.write("Creating noise model for router " + str(nid) + "\n")
             tossim.getNode(nid).createNoiseModel()
         for nid in set(sensors):
-            print "Creating noise model for sensor", nid
+           # print "Creating noise model for sensor", nid
+            self.debug.write("Creating noise model for sensor " + str(nid) + "\n")
             tossim.getNode(nid).createNoiseModel()
 
     def bootNodes(self, tossim, routers, sensors):
 
-        print "Booting server"
+        self.debug.write("Booting server" + "\n")
         tossim.getNode(0).bootAtTime(12234)
 
         counter = 1
         for nid in set(routers):
-            print "Booting routing node ", nid
+            self.debug.write("Booting routing node " + str(nid) + "\n")
             tossim.getNode(nid).bootAtTime(
-                (4 + tossim.ticksPerSecond() / 10) * counter + 122342)
+                (4 + tossim.ticksPerSecond() / 10) * counter + 12232)
             counter += 1
 
         for nid in set(sensors):
-            print "Booting sensor node ", nid
+            self.debug.write("Booting sensor node " + str(nid) + "\n")
             tossim.getNode(nid).bootAtTime(
-                (4 + tossim.ticksPerSecond() / 10) * counter + 122342)
+                (4 + tossim.ticksPerSecond() / 10) * counter + 12232)
             counter += 1
 
     def printMenu(self):
-        print "[1] "
-        print "[2] "
-        print "[3] "
-        print "[4] "
+        print "[1] Simulate fire"
+        print "[2] Simulate Routing Node malfuntion"
+        print "[3] Simulate malfuntion of module in Sensor Node"
+        print "[4] Check log file content"
+        print ""
+        print "[5] Check debug file content"
         print ""
         print "[0] Exit"
 
-    # for nid in range(1,2):
-    #   print "Booting routing node ",nid;
-    #   t.getNode(nid).bootAtTime((4 + t.ticksPerSecond() / 10) * nid + 122342)
+    def readInput(self):
+        while(1):
+            iTemp = raw_input("Select an option [0-5]: ")
+            print ""
+            try:
+                i = int(iTemp)
+            except ValueError:
+                print "ERROR: Invalid input type."
+                continue
+            if(i < 0 or i > 5):
+                print "ERROR: Invalid option selected"
+                continue
+            break
 
-    # for nid in range(100,101):
-    #   print "Booting sensor node ",nid;
-    #   t.getNode(nid).bootAtTime((4 + t.ticksPerSecond() / 10) * nid + 122342)
+        if(i == 0):
+            self.thread.running = False
+            self.thread.join()
+            self.debug.close()
+            exit()
+
+        options = {
+            1 : self.simulateFire,
+            2 : self.simulateRoutingNodeMalfunction,
+            3 : self.simulateSensorNodeComponentMalfunction,
+            4 : self.checkLogFile,
+            5 : self.checkDebugFile
+        }
+        options[i]()
+
+    def simulateFire(self):
+        print "Simulating fire"
+
+    def simulateRoutingNodeMalfunction(self):
+        print "Simulating Routing Node malfuntion"
+
+    def simulateSensorNodeComponentMalfunction(self):
+        print "Simulating malfuntion of module in Sensor Node"
+
+    def checkLogFile(self):
+        d = open("log.txt", "r")
+        #d = self.debug
+        for line in d:
+            print line
+        d.close()
+
+    def checkDebugFile(self):
+        d = open("debug.txt", "r")
+        #d = self.debug
+        for line in d:
+            print line
+        d.close()
 
 
 class ThreadedEvents(threading.Thread):
