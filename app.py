@@ -36,7 +36,7 @@ class Server():
         for line in f:
             s = line.split()
             if s:
-                #print " ", s[0], " ", s[1], " ", s[2]
+                # print " ", s[0], " ", s[1], " ", s[2]
                 self.debug.write(s[0] + " " + s[1] + " " + s[2] + "\n")
                 radio.add(int(s[0]), int(s[1]), float(s[2]))
                 # Verify node type and add to respective set
@@ -65,16 +65,18 @@ class Server():
                 for nid in set(sensors):
                     tossim.getNode(nid).addNoiseTraceReading(val)
 
-        #print "Creating noise model for server"
+        # print "Creating noise model for server"
         self.debug.write("Creating noise model for server" + "\n")
         tossim.getNode(0).createNoiseModel()
         for nid in set(routers):
-            #print "Creating noise model for router", nid
-            self.debug.write("Creating noise model for router " + str(nid) + "\n")
+            # print "Creating noise model for router", nid
+            self.debug.write(
+                "Creating noise model for router " + str(nid) + "\n")
             tossim.getNode(nid).createNoiseModel()
         for nid in set(sensors):
-           # print "Creating noise model for sensor", nid
-            self.debug.write("Creating noise model for sensor " + str(nid) + "\n")
+            # print "Creating noise model for sensor", nid
+            self.debug.write(
+                "Creating noise model for sensor " + str(nid) + "\n")
             tossim.getNode(nid).createNoiseModel()
 
     def bootNodes(self, tossim, routers, sensors):
@@ -126,11 +128,11 @@ class Server():
             exit()
 
         options = {
-            1 : self.simulateFire,
-            2 : self.simulateRoutingNodeMalfunction,
-            3 : self.simulateSensorNodeComponentMalfunction,
-            4 : self.checkLogFile,
-            5 : self.checkDebugFile
+            1: self.simulateFire,
+            2: self.simulateRoutingNodeMalfunction,
+            3: self.simulateSensorNodeComponentMalfunction,
+            4: self.checkLogFile,
+            5: self.checkDebugFile
         }
         options[i]()
 
@@ -145,14 +147,14 @@ class Server():
 
     def checkLogFile(self):
         d = open("log.txt", "r")
-        #d = self.debug
+        # d = self.debug
         for line in d:
             print line
         d.close()
 
     def checkDebugFile(self):
         d = open("debug.txt", "r")
-        #d = self.debug
+        # d = self.debug
         for line in d:
             print line
         d.close()
