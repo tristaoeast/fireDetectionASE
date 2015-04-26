@@ -12,7 +12,7 @@ class Server():
         self.tossim = Tossim([])
         self.radio = self.tossim.radio()
         self.topo = "topo.txt"
-        self.noise = "meyer-heavy.txt"
+        self.noise = "meyer-heavy-trimmed.txt"
         self.debug = open("debug.txt", "w")
         self.log = open("log.txt", "w")
         self.log.close()
