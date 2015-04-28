@@ -16,6 +16,8 @@
     interface SplitControl as AMControl;
     interface gps;
     interface smokeDetector;
+    interface temperatureDetector;
+    interface humidityDetector;
   }
  }
  implementation {

@@ -14,6 +14,8 @@
    components new AMReceiverC(AM_RADIO);
    components gpsC as GPS;
    components smokeDetectorC as SmokeDetector;
+   components temperatureDetectorC as TemperatureDetector;
+   components humidityDetectorC as HumidityDetector;
  
    App.Boot -> MainC;
    App.Leds -> LedsC;
@@ -26,4 +28,6 @@
    App.Receive -> AMReceiverC;
    App.gps -> GPS;
    App.smokeDetector -> SmokeDetector;
+   App.temperatureDetector -> TemperatureDetector;
+   App.humidityDetector -> HumidityDetector;
  }
