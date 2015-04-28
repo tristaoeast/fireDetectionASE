@@ -4,6 +4,6 @@
 typedef nx_struct position {
 	nx_uint16_t x;
 	nx_uint16_t y;
-} position;
+} position_t;
 
 #endif

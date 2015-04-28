@@ -1,20 +1,21 @@
  #include <Timer.h>
- #include "BlinkToRadio.h"
+ #include "Radio.h"
  
- configuration BlinkToRadioAppC {
+ configuration RadioAppC {
  }
  implementation {
    components MainC;
    components LedsC;
-   components BlinkToRadioC as App;
-   components new TimerMilliC() as Timer0;
+   components RadioC as App;
+   components new TimerMilliC() as SensorTimer;
    components ActiveMessageC;
-   components new AMSenderC(AM_BLINKTORADIO);
-   components new AMReceiverC(AM_BLINKTORADIO);
+   components new AMSenderC(AM_RADIO);
+   components new AMReceiverC(AM_RADIO);
+   components gpsC as GPS;
  
    App.Boot -> MainC;
    App.Leds -> LedsC;
-   App.Timer0 -> Timer0;
+   App.SensorTimer -> SensorTimer;
    App.Packet -> AMSenderC;
    App.AMPacket -> AMSenderC;
    App.AMSend -> AMSenderC;

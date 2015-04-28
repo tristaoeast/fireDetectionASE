@@ -28,7 +28,7 @@ class Server():
         self.thread.start()
 
         while(1):
-            self.printMenu()
+            #self.printMenu()
             self.readInput()
 
     def loadTopology(self, topo, radio, routers, sensors):
@@ -88,13 +88,13 @@ class Server():
         for nid in set(routers):
             self.debug.write("Booting routing node " + str(nid) + "\n")
             tossim.getNode(nid).bootAtTime(
-                (4 + tossim.ticksPerSecond() / 10) * counter + 12232)
+                (4 + tossim.ticksPerSecond() / 10) * counter + 1232)
             counter += 1
 
         for nid in set(sensors):
             self.debug.write("Booting sensor node " + str(nid) + "\n")
             tossim.getNode(nid).bootAtTime(
-                (4 + tossim.ticksPerSecond() / 10) * counter + 12232)
+                (4 + tossim.ticksPerSecond() / 10) * counter + 1232)
             counter += 1
 
     def printMenu(self):
@@ -109,15 +109,18 @@ class Server():
 
     def readInput(self):
         while(1):
+            self.printMenu()
             iTemp = raw_input("Select an option [0-5]: ")
             print ""
             try:
                 i = int(iTemp)
             except ValueError:
                 print "ERROR: Invalid input type."
+                print ""
                 continue
             if(i < 0 or i > 5):
                 print "ERROR: Invalid option selected"
+                print ""
                 continue
             break
 
