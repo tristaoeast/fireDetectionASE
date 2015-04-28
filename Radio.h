@@ -1,15 +1,26 @@
- #ifndef RADIO_H
- #define RADIO_H
+#ifndef RADIO_H
+#define RADIO_H
+
+#define REGISTER 0
+#define MEASURES 1
+#define SMOKE 2
+
  
- enum {
-   AM_RADIO = 6,
-   T_MEASURE = 10000, //10000 corresponds to 1 second
- };
+enum {
+  AM_RADIO = 6,
+  T_MEASURE = 100, //10000 corresponds to 1 second
+  T_SMOKE_MEASURE = 10000,
+};
  
 typedef nx_struct RadioMsg {
+
+  nx_uint8_t msg_type;
+
   nx_uint16_t nodeid;
   nx_uint16_t counter;
   nx_uint16_t randvalue;
+
+  nx_uint16_t dest;
 
   // Timestamp
   nx_uint8_t seconds;
