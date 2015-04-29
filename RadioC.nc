@@ -46,7 +46,7 @@
 
       if(TOS_NODE_ID >= 100){
 
-        RadioMsg* rpkt = (RadioMsg*)(call Packet.getPayload(&pkt, sizeof (RadioMsg)));
+        radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
         rpkt->msg_type = REGISTER;        
         rpkt->nodeid = TOS_NODE_ID;
         rpkt->dest = 0;
@@ -66,7 +66,7 @@
 
         dbg("debug", "x: %d and y: %d\n", pos.x, pos.y);
           
-        if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
+        if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
           busy = TRUE;
           dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> Register message sent with coordinates x: %d and y: %d.\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year, rpkt->x, rpkt->y);
         }
@@ -87,7 +87,7 @@
         dbg("debug", "BUSYYYYYYYYYYYYYYYYYYY\n");
     }
     if (!busy && (call smokeDetector.getSmoke() || smokeDetected)) {
-      RadioMsg* rpkt = (RadioMsg*)(call Packet.getPayload(&pkt, sizeof (RadioMsg)));
+      radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
       rpkt->nodeid = TOS_NODE_ID;
       rpkt->dest = 0;
       rpkt->msg_type = SMOKE;
@@ -102,7 +102,7 @@
       rpkt->month = info->tm_mon;
       rpkt->year = info->tm_year+1900;
 
-      if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
+      if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
         busy = TRUE;
         dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> SMOKE DETECTED!!!", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
 
@@ -113,7 +113,7 @@
   event void SensorsTimer.fired() {     
     
     if (!busy) {
-  		RadioMsg* rpkt = (RadioMsg*)(call Packet.getPayload(&pkt, sizeof (RadioMsg)));
+  		radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
    		rpkt->nodeid = TOS_NODE_ID;
       rpkt->dest = 0;
       rpkt->msg_type = MEASURES;
@@ -129,7 +129,7 @@
       rpkt->month = info->tm_mon;
       rpkt->year = info->tm_year+1900;
 
-      if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
+      if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
         busy = TRUE;
         dbg("debug", "London : %2d:%02d:%02d %02d/%02d/%d\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
       }
@@ -145,8 +145,8 @@
 
   event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len) {
 
-    if (len == sizeof(RadioMsg)) {
-      RadioMsg* rpkt = (RadioMsg*)payload;
+    if (len == sizeof(radio_msg)) {
+      radio_msg* rpkt = (radio_msg*)payload;
       dbg("debug", "Message Received from %d with random value %d and counter %d.\n", rpkt->nodeid, rpkt->randvalue, rpkt->counter);
         
         //Message REGISTER
@@ -167,7 +167,7 @@
         //ROUTING NODES
         else if( TOS_NODE_ID <= 99 && TOS_NODE_ID >= 1){
           if(!busy){
-            RadioMsg* rpktR = (RadioMsg*)(call Packet.getPayload(&pkt, sizeof (RadioMsg)));
+            radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
 
             rpktR->msg_type = rpkt->msg_type;        
             rpktR->nodeid = rpkt->nodeid;
@@ -183,7 +183,7 @@
             rpktR->x = rpkt->x;
             rpktR->y = rpkt->y;
 
-            if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
+            if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
               busy = TRUE;
               dbg("debug", "Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
             }
@@ -197,15 +197,15 @@
 
     //antes
     /*
-    if (len == sizeof(RadioMsg)) {
-      RadioMsg* rpkt = (RadioMsg*)payload;
+    if (len == sizeof(radio_msg)) {
+      radio_msg* rpkt = (radio_msg*)payload;
       dbg("debug", "Message Received from %d with random value %d and counter %d.\n", rpkt->nodeid, rpkt->randvalue, rpkt->counter);
       if(!busy){
-        RadioMsg* rpktR = (RadioMsg*)(call Packet.getPayload(&pkt, sizeof (RadioMsg)));
+        radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
           rpktR->nodeid = rpkt->nodeid;
           rpktR->counter = rpkt->counter;
           rpktR->randvalue = rpkt->randvalue;
-        if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
+        if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
           busy = TRUE;
           dbg("debug", "Message Sent from %d with counter %d.\n", TOS_NODE_ID, rpktR->counter);
         }

@@ -1,6 +1,6 @@
 #! /usr/bin/python
 from TOSSIM import *
-from tinyos.tossim.TossimApp import *
+from RadioMsg import *
 from sets import Set
 from time import sleep
 from subprocess import call
@@ -12,9 +12,7 @@ import threading
 class Server():
 
     def runServer(self):
-        n = NescApp()
-        vars = n.variables.variables()
-        self.tossim = Tossim(vars)
+        self.tossim = Tossim([])
         self.radio = self.tossim.radio()
         self.topo = "topo.txt"
         self.noise = "meyer-heavy-trimmed.txt"
@@ -146,10 +144,16 @@ class Server():
         options[i]()
 
     def simulateFire(self):
-        print "Simulating fire"
         t = self.tossim
-        m = t.getNode(0);
-
+        #inject packet to simulate fire
+        msg = RadioMsg()
+        msg.set_msg_type(3);
+        msg.set_dest(101);
+        pkt = t.newPacket();
+        pkt.setData(msg.data);
+        pkt.setType(msg.get_amType())
+        pkt.setDestination(101);
+        pkt.setSource(0);
 
     def simulateRoutingNodeMalfunction(self):
         print "Simulating Routing Node malfuntion"

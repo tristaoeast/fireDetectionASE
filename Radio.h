@@ -4,15 +4,17 @@
 #define REGISTER 0
 #define MEASURES 1
 #define SMOKE 2
+#define SIMULATE_FIRE 3
+#define PUT_OUT_FIRE 4
 
  
 enum {
-  AM_RADIO = 6,
+  AM_RADIO_MSG = 6,
   T_MEASURE = 100000, //10000 corresponds to 1 second
   T_SMOKE_MEASURE = 10000,
 };
  
-typedef nx_struct RadioMsg {
+typedef nx_struct radio_msg {
 
   nx_uint8_t msg_type;
 
@@ -44,6 +46,6 @@ typedef nx_struct RadioMsg {
   nx_uint8_t smoke;
 
 
-} RadioMsg;
+} radio_msg;
 
 #endif
