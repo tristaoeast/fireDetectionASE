@@ -22,6 +22,7 @@
  }
  implementation {
   bool busy = FALSE;
+  bool smokeDetected = FALSE<
   message_t pkt;
   uint16_t counter = 0;
   position_t p;
@@ -53,7 +54,7 @@
     while(busy) {
         dbg("debug", "BUSYYYYYYYYYYYYYYYYYYY\n");
     }
-    if (!busy && call smokeDetector.getSmoke()) {
+    if (!busy && (call smokeDetector.getSmoke() || smokeDetected)) {
       RadioMsg* rpkt = (RadioMsg*)(call Packet.getPayload(&pkt, sizeof (RadioMsg)));
       rpkt->nodeid = TOS_NODE_ID;
       rpkt->dest = 0;

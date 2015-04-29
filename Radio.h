@@ -8,7 +8,7 @@
  
 enum {
   AM_RADIO = 6,
-  T_MEASURE = 100, //10000 corresponds to 1 second
+  T_MEASURE = 100000, //10000 corresponds to 1 second
   T_SMOKE_MEASURE = 10000,
 };
  

@@ -2,6 +2,8 @@
 from TOSSIM import *
 from sets import Set
 from time import sleep
+from subprocess import call
+import shutil
 import sys
 import threading
 
@@ -156,11 +158,13 @@ class Server():
         d.close()
 
     def checkDebugFile(self):
-        d = open("debug.txt", "r")
+        shutil.copy2("debug.txt", "debugTemp.txt")
+        call(["gedit", "debugTemp.txt"])
+        #d = open("debug.txt", "r")
         # d = self.debug
-        for line in d:
-            print line
-        d.close()
+        #for line in d:
+        #    print line
+        #d.close()
 
 
 class ThreadedEvents(threading.Thread):
