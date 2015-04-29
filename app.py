@@ -165,10 +165,9 @@ class Server():
         d.close()
 
     def checkDebugFile(self):
-        #shutil.copy2("debug.txt", "debugTemp.txt")
+        shutil.copy2("debug.txt", "debugTemp.txt")
         #call(["gedit", "debugTemp.txt"])
-        d = open("debug.txt", "r")
-        d = self.debug
+        d = open("debugTemp.txt")
         for line in d:
             print line
         d.close()
