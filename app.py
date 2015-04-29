@@ -147,13 +147,13 @@ class Server():
         t = self.tossim
         #inject packet to simulate fire
         msg = RadioMsg()
-        msg.set_msg_type(3);
-        msg.set_dest(101);
-        pkt = t.newPacket();
-        pkt.setData(msg.data);
+        msg.set_msg_type(3)
+        msg.set_dest(101)
+        pkt = t.newPacket()
+        pkt.setData(msg.data)
         pkt.setType(msg.get_amType())
-        pkt.setDestination(101);
-        pkt.setSource(0);
+        pkt.setDestination(101)
+        pkt.setSource(0)
 
     def simulateRoutingNodeMalfunction(self):
         print "Simulating Routing Node malfuntion"

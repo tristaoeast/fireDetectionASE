@@ -10,8 +10,8 @@
  
 enum {
   AM_RADIO_MSG = 6,
-  T_MEASURE = 100000, //10000 corresponds to 1 second
-  T_SMOKE_MEASURE = 10000,
+  T_MEASURE = 10000, //10000 corresponds to 1 second
+  T_SMOKE_MEASURE = 1000000,
 };
  
 typedef nx_struct radio_msg {

@@ -85,9 +85,7 @@
   }
 
   event void SmokeTimer.fired() {
-    while(busy) {
-        dbg("debug", "BUSYYYYYYYYYYYYYYYYYYY\n");
-    }
+    dbg("debug", "SMOKE TIMER FIRED\n");
     if (!busy && (call smokeDetector.getSmoke() || smokeDetected)) {
       radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
       rpkt->nodeid = TOS_NODE_ID;
@@ -112,8 +110,8 @@
     }
   }
  
-  event void SensorsTimer.fired() {     
-    
+  event void SensorsTimer.fired() {
+    dbg("debug", "SENSOR TIMER FIRED\n");
     if (!busy) {
   		radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
    		rpkt->nodeid = TOS_NODE_ID;
@@ -151,6 +149,10 @@
     if (len == sizeof(radio_msg)) {
       radio_msg* rpkt = (radio_msg*)payload;
       //dbg("debug", "Message Received from %d with random value %d and counter %d.\n", rpkt->nodeid, rpkt->randvalue, rpkt->counter);
+
+      if(rpkt->msg_type == SIMULATE_FIRE){
+        dbg("debug", "RECEIVED FIRE!!!!");
+      }
 
         
         //Message REGISTER
