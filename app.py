@@ -4,6 +4,8 @@ from RadioMsg import *
 from sets import Set
 from time import sleep
 from subprocess import call
+from subprocess import Popen
+from os import remove
 import shutil
 import sys
 import threading
@@ -166,19 +168,21 @@ class Server():
         print "Simulating malfuntion of module in Sensor Node"
 
     def checkLogFile(self):
-        d = open("log.txt", "r")
-        # d = self.debug
-        for line in d:
-            print line
-        d.close()
+        shutil.copy2("log.txt", "logTemp.txt")
+        self.sp = Popen('gedit logTemp.txt', shell=True)
+        #d = open("log.txt", "r")
+        #for line in d:
+        #    print line
+        #d.close()
 
     def checkDebugFile(self):
         shutil.copy2("debug.txt", "debugTemp.txt")
+        self.sp = Popen('gedit debugTemp.txt', shell=True)
         #call(["gedit", "debugTemp.txt"])
-        d = open("debugTemp.txt")
-        for line in d:
-            print line
-        d.close()
+        #d = open("debugTemp.txt")
+        #for line in d:
+        #    print line
+        #d.close()
 
     def putOutFire(self):
         t = self.tossim
