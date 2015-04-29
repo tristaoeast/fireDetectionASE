@@ -13,8 +13,9 @@ implementation {
 	bool initialized;
 	
 	event void Boot.booted() {
-		pos.x = (rand() % 1000) + 1;
-		pos.y = (rand() % 1000) + 1;
+		//pos.x = (rand() % 1000) + 1;
+		//pos.y = (rand() % 1000) + 1;
+
     }
 	
 	command	position_t gps.getPosition() {
