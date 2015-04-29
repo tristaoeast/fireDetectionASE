@@ -10,8 +10,8 @@
    components new TimerMilliC() as SensorsTimer;
    components new TimerMilliC() as SmokeTimer;
    components ActiveMessageC;
-   components new AMSenderC(AM_RADIO);
-   components new AMReceiverC(AM_RADIO);
+   components new AMSenderC(AM_RADIO_MSG);
+   components new AMReceiverC(AM_RADIO_MSG);
    components gpsC as GPS;
    components smokeDetectorC as SmokeDetector;
    components temperatureDetectorC as TemperatureDetector;
