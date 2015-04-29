@@ -63,10 +63,12 @@
         pos = call gps.getPosition();
         rpkt->x = pos.x;
         rpkt->y = pos.y;
+
+        dbg("debug", "x: %d and y: %d\n", pos.x, pos.y);
           
         if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
           busy = TRUE;
-          dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> Register message sent.\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
+          dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> Register message sent with coordinates x: %d and y: %d.\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year, rpkt->x, rpkt->y);
         }
         call SensorsTimer.startPeriodic(T_MEASURE);
         call SmokeTimer.startPeriodic(T_SMOKE_MEASURE);
@@ -163,15 +165,27 @@
         }
 
         //ROUTING NODES
-        if( TOS_NODE_ID <= 99 && TOS_NODE_ID >= 1){
+        else if( TOS_NODE_ID <= 99 && TOS_NODE_ID >= 1){
           if(!busy){
             RadioMsg* rpktR = (RadioMsg*)(call Packet.getPayload(&pkt, sizeof (RadioMsg)));
+
+            rpktR->msg_type = rpkt->msg_type;        
             rpktR->nodeid = rpkt->nodeid;
-            rpktR->hour = rpkt->counter;
-            rpktR->randvalue = rpkt->randvalue;
+            rpktR->dest = rpkt->dest;
+            
+            rpktR->seconds = rpkt->seconds;
+            rpktR->minutes = rpkt->minutes;
+            rpktR->hour = rpkt->hour;
+            rpktR->day = rpkt->day;
+            rpktR->month = rpkt->month;
+            rpktR->year = rpkt->year;
+
+            rpktR->x = rpkt->x;
+            rpktR->y = rpkt->y;
+
             if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
               busy = TRUE;
-              dbg("debug", "Message Sent from %d with counter %d.\n", TOS_NODE_ID, rpktR->counter);
+              dbg("debug", "Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
             }
           }
         }

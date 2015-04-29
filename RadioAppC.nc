@@ -4,9 +4,9 @@
  configuration RadioAppC {
  }
  implementation {
-   components MainC;
+   //components MainC;
    components LedsC;
-   components RadioC as App;
+   components MainC, RadioC as App;
    components new TimerMilliC() as SensorsTimer;
    components new TimerMilliC() as SmokeTimer;
    components ActiveMessageC;

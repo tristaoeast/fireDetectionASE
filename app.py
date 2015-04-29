@@ -159,13 +159,13 @@ class Server():
         d.close()
 
     def checkDebugFile(self):
-        shutil.copy2("debug.txt", "debugTemp.txt")
-        call(["gedit", "debugTemp.txt"])
-        #d = open("debug.txt", "r")
-        # d = self.debug
-        #for line in d:
-        #    print line
-        #d.close()
+        #shutil.copy2("debug.txt", "debugTemp.txt")
+        #call(["gedit", "debugTemp.txt"])
+        d = open("debug.txt", "r")
+        d = self.debug
+        for line in d:
+            print line
+        d.close()
 
 
 class ThreadedEvents(threading.Thread):
