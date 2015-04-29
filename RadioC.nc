@@ -32,6 +32,8 @@
   bool registeredNodes[65000] = { FALSE };
   int positionXSensorNodes[65000];
   int positionYSensorNodes[65000];
+  int lastTimeStamp[65000];
+  int lastDate[65000];
   position_t pos;
 
  
@@ -147,7 +149,7 @@
 
     if (len == sizeof(RadioMsg)) {
       RadioMsg* rpkt = (RadioMsg*)payload;
-      dbg("debug", "Message Received from %d with random value %d and counter %d.\n", rpkt->nodeid, rpkt->randvalue, rpkt->counter);
+      //dbg("debug", "Message Received from %d with random value %d and counter %d.\n", rpkt->nodeid, rpkt->randvalue, rpkt->counter);
         
         //Message REGISTER
       if(rpkt->msg_type == REGISTER){
@@ -189,7 +191,90 @@
             }
           }
         }
+      }
+      else if(rpkt->msg_type == MEASURES){
 
+        if(TOS_NODE_ID >=0 && TOS_NODE_ID < 100){
+          //verifica se o timestamp e mais recente que o da ultima mensagem recebida
+          int timestampMsg = rpkt->hour*10000 + rpkt->minutes*100 + rpkt->seconds;
+          int dateMsg = rpkt->year*10000 + rpkt->minutes*100 + rpkt->seconds;
+          //tempo (horas) recebido e maior que o da ultima mensagem recebida
+          if(timestampMsg > lastTimeStamp[rpkt->nodeid]){
+            lastTimeStamp[rpkt->nodeid] = timestampMsg;
+            lastDate[rpkt->nodeid] = dateMsg;
+            dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
+            if(TOS_NODE_ID == 0)
+            {
+              dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d mesure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
+              dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d mesure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
+            } 
+            else
+            {
+              if(!busy){
+                RadioMsg* rpktR = (RadioMsg*)(call Packet.getPayload(&pkt, sizeof (RadioMsg)));
+
+                rpktR->msg_type = rpkt->msg_type;        
+                rpktR->nodeid = rpkt->nodeid;
+                rpktR->dest = rpkt->dest;
+                
+                rpktR->seconds = rpkt->seconds;
+                rpktR->minutes = rpkt->minutes;
+                rpktR->hour = rpkt->hour;
+                rpktR->day = rpkt->day;
+                rpktR->month = rpkt->month;
+                rpktR->year = rpkt->year;
+
+                rpktR->humidity = rpkt->humidity;
+                rpktR->temperature = rpkt->temperature;
+
+                if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
+                  busy = TRUE;
+                  dbg("debug", "Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
+                }
+              }
+            }
+          }
+          //tempo (horas) recebido e menor que o da ultima mensagem
+          else
+          {
+            //vai ver a data, se a data recebida for maior guarda esses novos valores no log
+            if(dateMsg > lastDate[rpkt->nodeid]){
+              lastTimeStamp[rpkt->nodeid] = timestampMsg;
+              lastDate[rpkt->nodeid] = dateMsg;
+              dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
+              if(TOS_NODE_ID == 0)
+              {
+                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d mesure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
+                dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d mesure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
+              }
+              else
+              {
+                if(!busy){
+                  RadioMsg* rpktR = (RadioMsg*)(call Packet.getPayload(&pkt, sizeof (RadioMsg)));
+
+                  rpktR->msg_type = rpkt->msg_type;        
+                  rpktR->nodeid = rpkt->nodeid;
+                  rpktR->dest = rpkt->dest;
+                  
+                  rpktR->seconds = rpkt->seconds;
+                  rpktR->minutes = rpkt->minutes;
+                  rpktR->hour = rpkt->hour;
+                  rpktR->day = rpkt->day;
+                  rpktR->month = rpkt->month;
+                  rpktR->year = rpkt->year;
+
+                  rpktR->humidity = rpkt->humidity;
+                  rpktR->temperature = rpkt->temperature;
+
+                  if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
+                    busy = TRUE;
+                    dbg("debug", "Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
+                  }
+                }
+              }
+            }
+          }
+        }
       }
 
     }
