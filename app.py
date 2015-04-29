@@ -107,14 +107,15 @@ class Server():
         print "[3] Simulate malfuntion of module in Sensor Node"
         print "[4] Check log file content"
         print ""
-        print "[5] Check debug file content"
+        print "[5] Put out fire"
+        print "[6] Check debug file content"
         print ""
         print "[0] Exit"
 
     def readInput(self):
         while(1):
             self.printMenu()
-            iTemp = raw_input("Select an option [0-5]: ")
+            iTemp = raw_input("Select an option [0-6]: ")
             print ""
             try:
                 i = int(iTemp)
@@ -122,7 +123,7 @@ class Server():
                 print "ERROR: Invalid input type."
                 print ""
                 continue
-            if(i < 0 or i > 5):
+            if(i < 0 or i > 6):
                 print "ERROR: Invalid option selected"
                 print ""
                 continue
@@ -139,7 +140,8 @@ class Server():
             2: self.simulateRoutingNodeMalfunction,
             3: self.simulateSensorNodeComponentMalfunction,
             4: self.checkLogFile,
-            5: self.checkDebugFile
+            5: self.putOutFire,
+            6: self.checkDebugFile
         }
         options[i]()
 
@@ -154,6 +156,8 @@ class Server():
         pkt.setType(msg.get_amType())
         pkt.setDestination(101)
         pkt.setSource(0)
+        pkt.deliverNow(101)
+
 
     def simulateRoutingNodeMalfunction(self):
         print "Simulating Routing Node malfuntion"
@@ -175,6 +179,18 @@ class Server():
         for line in d:
             print line
         d.close()
+
+    def putOutFire(self):
+        t = self.tossim
+        #inject packet to simulate fire
+        msg = RadioMsg()
+        msg.set_msg_type(4)
+        pkt = t.newPacket()
+        pkt.setData(msg.data)
+        pkt.setType(msg.get_amType())
+        pkt.setDestination(101)
+        pkt.setSource(0)
+        pkt.deliverNow(101)
 
 
 class ThreadedEvents(threading.Thread):

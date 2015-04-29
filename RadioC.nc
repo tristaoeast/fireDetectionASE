@@ -83,7 +83,7 @@
   }
 
   event void SmokeTimer.fired() {
-    dbg("debug", "SMOKE TIMER FIRED\n");
+    //dbg("debug", "SMOKE TIMER FIRED\n");
     if (!busy && (call smokeDetector.getSmoke() || smokeDetected)) {
       radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
       rpkt->nodeid = TOS_NODE_ID;
@@ -102,14 +102,14 @@
 
       if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
         busy = TRUE;
-        dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> SMOKE DETECTED!!!", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
+        dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> SMOKE DETECTED!!!\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
 
       }
     }
   }
  
   event void SensorsTimer.fired() {
-    dbg("debug", "SENSOR TIMER FIRED\n");
+    //dbg("debug", "SENSOR TIMER FIRED\n");
     if (!busy) {
   		radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
    		rpkt->nodeid = TOS_NODE_ID;
@@ -137,7 +137,7 @@
   event void AMSend.sendDone(message_t* msg, error_t error) {
     if (&pkt == msg) {
       busy = FALSE;
-      dbg("debug", "Busy FALSE.\n");
+      //dbg("debug", "Busy FALSE.\n");
     }
   }
 
@@ -149,7 +149,11 @@
       //dbg("debug", "Message Received from %d with random value %d and counter %d.\n", rpkt->nodeid, rpkt->randvalue, rpkt->counter);
 
       if(rpkt->msg_type == SIMULATE_FIRE){
-        dbg("debug", "RECEIVED FIRE!!!!");
+        dbg("debug", "RECEIVED FIRE!!!!\n");
+        smokeDetected = TRUE;
+      } else if(rpkt->msg_type == PUT_OUT_FIRE){
+        dbg("debug", "THE FIREMEN CAME AND PUT OUT THE FIRE!!!!!!!!!!!!\n");
+        smokeDetected = FALSE;
       }
 
         
