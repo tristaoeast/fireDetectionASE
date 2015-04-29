@@ -148,17 +148,117 @@
       radio_msg* rpkt = (radio_msg*)payload;
       //dbg("debug", "Message Received from %d with random value %d and counter %d.\n", rpkt->nodeid, rpkt->randvalue, rpkt->counter);
 
+      //
       if(rpkt->msg_type == SIMULATE_FIRE){
         dbg("debug", "RECEIVED FIRE!!!!\n");
         smokeDetected = TRUE;
-      } else if(rpkt->msg_type == PUT_OUT_FIRE){
+        if (!busy) {
+          radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
+          rpkt->nodeid = TOS_NODE_ID;
+          rpkt->dest = 0;
+          rpkt->msg_type = SMOKE;
+          rpkt->smoke = 1;
+
+          time(&rawtime);
+          info = gmtime(&rawtime);
+          rpkt->seconds = info->tm_sec;
+          rpkt->minutes = info->tm_min;
+          rpkt->hour = info->tm_hour+BST;
+          rpkt->day = info->tm_mday;
+          rpkt->month = info->tm_mon;
+          rpkt->year = info->tm_year+1900;
+
+          if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
+            busy = TRUE;
+            dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> SMOKE DETECTED!!!\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
+          }
+        }
+      } 
+      else if(rpkt->msg_type == PUT_OUT_FIRE){
         dbg("debug", "THE FIREMEN CAME AND PUT OUT THE FIRE!!!!!!!!!!!!\n");
         smokeDetected = FALSE;
       }
+      else if(rpkt->msg_type == SMOKE){
+        if(TOS_NODE_ID >=0 && TOS_NODE_ID < 100){
+          //verifica se o timestamp e mais recente que o da ultima mensagem recebida
+          int timestampMsg = rpkt->hour*10000 + rpkt->minutes*100 + rpkt->seconds;
+          int dateMsg = rpkt->year*10000 + rpkt->minutes*100 + rpkt->seconds;
+          //tempo (horas) recebido e maior que o da ultima mensagem recebida
+          if(timestampMsg > lastTimeStamp[rpkt->nodeid]){
+            lastTimeStamp[rpkt->nodeid] = timestampMsg;
+            lastDate[rpkt->nodeid] = dateMsg;
+            if(TOS_NODE_ID == 0)
+            {
+              dbg("debug", "[SMOKE] <%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->smoke);
+              dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->smoke);
+            } 
+            else
+            {
+              if(!busy){
+                radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
 
-        
-        //Message REGISTER
-      if(rpkt->msg_type == REGISTER){
+                rpktR->msg_type = rpkt->msg_type;        
+                rpktR->nodeid = rpkt->nodeid;
+                rpktR->dest = rpkt->dest;
+                
+                rpktR->seconds = rpkt->seconds;
+                rpktR->minutes = rpkt->minutes;
+                rpktR->hour = rpkt->hour;
+                rpktR->day = rpkt->day;
+                rpktR->month = rpkt->month;
+                rpktR->year = rpkt->year;
+
+                rpktR->smoke = rpkt->smoke;
+
+                if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
+                  busy = TRUE;
+                  dbg("debug", "[SMOKE] Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
+                }
+              }
+            }
+          }
+          //tempo (horas) recebido e menor que o da ultima mensagem
+          else
+          {
+            //vai ver a data, se a data recebida for maior guarda esses novos valores no log
+            if(dateMsg > lastDate[rpkt->nodeid]){
+              lastTimeStamp[rpkt->nodeid] = timestampMsg;
+              lastDate[rpkt->nodeid] = dateMsg;
+              //dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
+              if(TOS_NODE_ID == 0)
+              {
+                dbg("debug", "[SMOKE] <%2d:%02d:%02d %02d/%02d/%d> Sensor Node detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->smoke);
+                dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->smoke);
+              }
+              else
+              {
+                if(!busy){
+                  radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
+
+                  rpktR->msg_type = rpkt->msg_type;        
+                  rpktR->nodeid = rpkt->nodeid;
+                  rpktR->dest = rpkt->dest;
+                  
+                  rpktR->seconds = rpkt->seconds;
+                  rpktR->minutes = rpkt->minutes;
+                  rpktR->hour = rpkt->hour;
+                  rpktR->day = rpkt->day;
+                  rpktR->month = rpkt->month;
+                  rpktR->year = rpkt->year;
+
+                  rpktR->smoke = rpkt->smoke;
+
+                  if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
+                    busy = TRUE;
+                    dbg("debug", "[SMOKE] Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      else if(rpkt->msg_type == REGISTER){
 
         //SERVER
         if( TOS_NODE_ID == 0){
