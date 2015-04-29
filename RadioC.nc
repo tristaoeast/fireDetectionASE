@@ -32,18 +32,45 @@
   bool registeredNodes[65000] = { FALSE };
   int positionXSensorNodes[65000];
   int positionYSensorNodes[65000];
+  position_t pos;
+
  
   event void Boot.booted() {
     call AMControl.start();
     dbg("debug", "Node booted.\n");
-    
   }
 
   event void AMControl.startDone(error_t err) {
     if (err == SUCCESS) {
       // TODO: Register with server
-      call SensorsTimer.startPeriodic(T_MEASURE);
-      //call SmokeTimer.startPeriodic(T_SMOKE_MEASURE);
+
+      if(TOS_NODE_ID >= 100){
+
+        RadioMsg* rpkt = (RadioMsg*)(call Packet.getPayload(&pkt, sizeof (RadioMsg)));
+        rpkt->msg_type = REGISTER;        
+        rpkt->nodeid = TOS_NODE_ID;
+        rpkt->dest = 0;
+        
+        time(&rawtime);
+        info = gmtime(&rawtime);
+        rpkt->seconds = info->tm_sec;
+        rpkt->minutes = info->tm_min;
+        rpkt->hour = info->tm_hour+BST;
+        rpkt->day = info->tm_mday;
+        rpkt->month = info->tm_mon;
+        rpkt->year = info->tm_year+1900;
+
+        pos = call gps.getPosition();
+        rpkt->x = pos.x;
+        rpkt->y = pos.y;
+          
+        if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
+          busy = TRUE;
+          dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> Register message sent.\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
+        }
+        call SensorsTimer.startPeriodic(T_MEASURE);
+        call SmokeTimer.startPeriodic(T_SMOKE_MEASURE);
+      }
     }
     else {
       call AMControl.start();
@@ -64,36 +91,45 @@
       rpkt->msg_type = SMOKE;
       rpkt->smoke = 1;
 
+      time(&rawtime);
+      info = gmtime(&rawtime);
+      rpkt->seconds = info->tm_sec;
+      rpkt->minutes = info->tm_min;
+      rpkt->hour = info->tm_hour+BST;
+      rpkt->day = info->tm_mday;
+      rpkt->month = info->tm_mon;
+      rpkt->year = info->tm_year+1900;
+
       if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
         busy = TRUE;
-        dbg("debug", "Message Send.\n");
-        time(&rawtime);
-        /* Get GMT time */
-      
-        info = gmtime(&rawtime);
-        dbg("debug", "London : %2d:%02d:%02d %02d/%02d/%d\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
+        dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> SMOKE DETECTED!!!", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
+
       }
     }
   }
  
-  event void SensorsTimer.fired() {
-    counter++;
-     
-    if(TOS_NODE_ID == 0){
-      if (!busy) {
-    		RadioMsg* rpkt = (RadioMsg*)(call Packet.getPayload(&pkt, sizeof (RadioMsg)));
-    		rpkt->nodeid = TOS_NODE_ID;
-    		rpkt->counter = counter;
-    		rpkt->randvalue = rand() % 10;
-		    
-        if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
-          busy = TRUE;
-          dbg("debug", "Message Send.\n");
-          time(&rawtime);
-          /* Get GMT time */
-          info = gmtime(&rawtime);
-          dbg("debug", "London : %2d:%02d:%02d %02d/%02d/%d\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
-		    }
+  event void SensorsTimer.fired() {     
+    
+    if (!busy) {
+  		RadioMsg* rpkt = (RadioMsg*)(call Packet.getPayload(&pkt, sizeof (RadioMsg)));
+   		rpkt->nodeid = TOS_NODE_ID;
+      rpkt->dest = 0;
+      rpkt->msg_type = MEASURES;
+      rpkt->humidity = call humidityDetector.getHumidity();
+      rpkt->temperature = call temperatureDetector.getTemperature();
+
+      time(&rawtime);
+      info = gmtime(&rawtime);
+      rpkt->seconds = info->tm_sec;
+      rpkt->minutes = info->tm_min;
+      rpkt->hour = info->tm_hour+BST;
+      rpkt->day = info->tm_mday;
+      rpkt->month = info->tm_mon;
+      rpkt->year = info->tm_year+1900;
+
+      if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(RadioMsg)) == SUCCESS) {
+        busy = TRUE;
+        dbg("debug", "London : %2d:%02d:%02d %02d/%02d/%d\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
       }
     }
   }
