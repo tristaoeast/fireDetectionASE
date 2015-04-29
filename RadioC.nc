@@ -83,7 +83,7 @@
   }
 
   event void SmokeTimer.fired() {
-    dbg("debug", "SMOKE TIMER FIRED\n");
+    //dbg("debug", "SMOKE TIMER FIRED\n");
     if (!busy && (call smokeDetector.getSmoke() || smokeDetected)) {
       radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
       rpkt->nodeid = TOS_NODE_ID;
@@ -109,7 +109,7 @@
   }
  
   event void SensorsTimer.fired() {
-    dbg("debug", "SENSOR TIMER FIRED\n");
+    //dbg("debug", "SENSOR TIMER FIRED\n");
     if (!busy) {
   		radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
    		rpkt->nodeid = TOS_NODE_ID;
@@ -207,8 +207,8 @@
             //dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
             if(TOS_NODE_ID == 0)
             {
-              dbg("debug", "[MESURE] <%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d mesure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
-              dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d mesure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
+              dbg("debug", "[MEASURE] <%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d measure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
+              dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d measure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
             } 
             else
             {
@@ -231,7 +231,7 @@
 
                 if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
                   busy = TRUE;
-                  dbg("debug", "[MESURE] Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
+                  dbg("debug", "[MEASURE] Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
                 }
               }
             }
@@ -246,8 +246,8 @@
               //dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
               if(TOS_NODE_ID == 0)
               {
-                dbg("debug", "[MESURE] <%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d mesure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
-                dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d mesure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
+                dbg("debug", "[MEASURE] <%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d measure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
+                dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d measure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
               }
               else
               {
@@ -270,7 +270,7 @@
 
                   if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
                     busy = TRUE;
-                    dbg("debug", "[MESURE] Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
+                    dbg("debug", "[MEASURE] Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
                   }
                 }
               }
