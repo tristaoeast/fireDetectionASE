@@ -17,10 +17,11 @@ class Server():
         self.noise = "meyer-heavy-trimmed.txt"
         self.debug = open("debug.txt", "w")
         self.log = open("log.txt", "w")
-        self.log.close()
+        #self.log.close()
         self.sensors = Set()
         self.routers = Set()
         self.tossim.addChannel("debug", self.debug)
+        self.tossim.addChannel("log", self.log)
         self.loadTopology(self.topo, self.radio, self.routers, self.sensors)
         self.loadNoiseModel(
             self.noise, self.tossim, self.routers, self.sensors)
