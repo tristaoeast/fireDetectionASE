@@ -1,5 +1,6 @@
 #! /usr/bin/python
 from TOSSIM import *
+from tinyos.tossim.TossimApp import *
 from sets import Set
 from time import sleep
 from subprocess import call
@@ -11,7 +12,9 @@ import threading
 class Server():
 
     def runServer(self):
-        self.tossim = Tossim([])
+        n = NescApp()
+        vars = n.variables.variables()
+        self.tossim = Tossim(vars)
         self.radio = self.tossim.radio()
         self.topo = "topo.txt"
         self.noise = "meyer-heavy-trimmed.txt"
@@ -144,6 +147,9 @@ class Server():
 
     def simulateFire(self):
         print "Simulating fire"
+        t = self.tossim
+        m = t.getNode(0);
+
 
     def simulateRoutingNodeMalfunction(self):
         print "Simulating Routing Node malfuntion"
@@ -159,9 +165,9 @@ class Server():
         d.close()
 
     def checkDebugFile(self):
-        #shutil.copy2("debug.txt", "debugTemp.txt")
+        shutil.copy2("debug.txt", "debugTemp.txt")
         #call(["gedit", "debugTemp.txt"])
-        d = open("debug.txt", "r")
+        d = open("debugTemp.txt")
         for line in d:
             print line
         d.close()

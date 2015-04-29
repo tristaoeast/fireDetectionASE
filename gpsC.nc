@@ -19,7 +19,7 @@ implementation {
     }
 	
 	command	position_t gps.getPosition() {
-		if(!initialized){
+		if(!initialized) {
 			pos.x = (rand() % 1000) + 1;
 			pos.y = (rand() % 1000) + 1;
 			initialized = TRUE;
