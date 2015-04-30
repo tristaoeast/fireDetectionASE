@@ -152,11 +152,25 @@
 
       if(rpkt->msg_type == ASSIGN_SNODE){
         if(TOS_NODE_ID <= 99 && TOS_NODE_ID >= 1){
-          if(rpkt->routingNode == TOS_NODE_ID && sensorNodeCounter < 100)
+          if(rpkt->dest == TOS_NODE_ID && sensorNodeCounter < 100)
           {
             mySensorNodes[sensorNodeCounter] = rpkt->nodeid;
             sensorNodeCounter++;
             dbg("debug", "[ASSIGN_SNODE] Sensor Node %d assgined to Routing Node %d.\n", TOS_NODE_ID, rpkt->nodeid);
+          }
+          else{
+            if (!busy) {
+              radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
+              rpktR->nodeid = rpkt->nodeid;
+              rpktR->dest = rpkt->dest;
+              rpktR->msg_type = rpkt->msg_type;
+
+
+              if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
+                busy = TRUE;
+                dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> SMOKE DETECTED!!!\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
+              }
+            }
           }
           //TODO: else if reencaminhar mensagem caso 
         }
