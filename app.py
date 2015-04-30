@@ -45,8 +45,8 @@ class Server():
                 # print " ", s[0], " ", s[1], " ", s[2]
                 self.debug.write(s[0] + " " + s[1] + " " + s[2] + "\n")
                 radio.add(int(s[0]), int(s[1]), float(s[2]))
-                self.debug.write(s[1] + " " + s[0] + " " + s[2] + "\n")
-                radio.add(int(s[1]), int(s[0]), float(s[2]))
+                #self.debug.write(s[1] + " " + s[0] + " " + s[2] + "\n")
+                #radio.add(int(s[1]), int(s[0]), float(s[2]))
                 # Verify node type and add to respective set
                 if 0 != int(s[0]):
                     if int(s[0]) < 100:
@@ -96,13 +96,13 @@ class Server():
         for nid in set(routers):
             self.debug.write("Booting routing node " + str(nid) + "\n")
             tossim.getNode(nid).bootAtTime(
-                (4 + tossim.ticksPerSecond() / 10) * counter + 1232)
+                (4 + tossim.ticksPerSecond() / 10) * counter + 12332)
             counter += 1
 
         for nid in set(sensors):
             self.debug.write("Booting sensor node " + str(nid) + "\n")
             tossim.getNode(nid).bootAtTime(
-                (4 + tossim.ticksPerSecond() / 10) * counter + 1232)
+                (4 + tossim.ticksPerSecond() / 10) * counter + 12332)
             counter += 1
 
     def printMenu(self):
