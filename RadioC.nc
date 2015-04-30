@@ -79,9 +79,9 @@
         call SensorsTimer.startPeriodic(T_MEASURE);
         call SmokeTimer.startPeriodic(T_SMOKE_MEASURE);
       }
-      else {
+      /*else {
         call SmokeTimer.startPeriodic(2000);
-      }
+      }*/
      /* else if(0 < TOS_NODE_ID && TOS_NODE_ID < 100) {
         msg_q = (radio_msg*) malloc(sizeof(radio_msg) * 10000);
       }*/
@@ -120,7 +120,7 @@
         }
       }
     }
-    else {
+    /*else {
       dbg("debug", "############### IM ALIVE ############### MSG_Q_CNT: %d\n", msg_q_cnt);
       if(!busy && msg_q_cnt > 0) {
         int index = msg_q_cnt - 1;
@@ -170,7 +170,7 @@
           //dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SEND_DONE] Message sent from queue\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
         }
       }
-    }
+    }*/
   }
  
   event void SensorsTimer.fired() {
@@ -202,41 +202,43 @@
 
   event void AMSend.sendDone(message_t* msg, error_t error) {
     if ((&pkt == msg) || (&pktQ == msg)) {
-      busy = FALSE;
+     
       //dbg("debug", "[SEND_DONE].\n");
-      /*if(msg_q_cnt > 0) {
+      while(msg_q_cnt > 0) {
 
+        int index = msg_q_cnt - 1;
         radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pktQ, sizeof (radio_msg)));
-        rpkt->msg_type = msg_q[msg_q_cnt].msg_type;
-        rpkt->nodeid = msg_q[msg_q_cnt].nodeid;
-        rpkt->dest = msg_q[msg_q_cnt].dest;
+        rpkt->msg_type = msg_q[index].msg_type;
+        rpkt->nodeid = msg_q[index].nodeid;
+        rpkt->dest = msg_q[index].dest;
 
-        rpkt->counter = msg_q[msg_q_cnt].counter;
-        rpkt->randvalue = msg_q[msg_q_cnt].randvalue;
-        rpkt->routingNode = msg_q[msg_q_cnt].routingNode;
+        rpkt->counter = msg_q[index].counter;
+        rpkt->randvalue = msg_q[index].randvalue;
+        rpkt->routingNode = msg_q[index].routingNode;
 
-        rpkt->seconds = msg_q[msg_q_cnt].seconds;
-        rpkt->minutes = msg_q[msg_q_cnt].minutes;
-        rpkt->hour = msg_q[msg_q_cnt].hour;
-        rpkt->day = msg_q[msg_q_cnt].day;
-        rpkt->month = msg_q[msg_q_cnt].month;
-        rpkt->year = msg_q[msg_q_cnt].year;
+        rpkt->seconds = msg_q[index].seconds;
+        rpkt->minutes = msg_q[index].minutes;
+        rpkt->hour = msg_q[index].hour;
+        rpkt->day = msg_q[index].day;
+        rpkt->month = msg_q[index].month;
+        rpkt->year = msg_q[index].year;
 
-        rpkt->x = msg_q[msg_q_cnt].x;
-        rpkt->y = msg_q[msg_q_cnt].y;
+        rpkt->x = msg_q[index].x;
+        rpkt->y = msg_q[index].y;
         
-        rpkt->humidity = msg_q[msg_q_cnt].humidity;
-        rpkt->temperature = msg_q[msg_q_cnt].temperature;
-        rpkt->smoke = msg_q[msg_q_cnt].smoke;
+        rpkt->humidity = msg_q[index].humidity;
+        rpkt->temperature = msg_q[index].temperature;
+        rpkt->smoke = msg_q[index].smoke;
         msg_q_cnt--;
 
         dbg("debug", "[SEND_DONE] QUEUE HAS MESSAGES\n");
 
         if (call AMSend.send(AM_BROADCAST_ADDR, &pktQ, sizeof(radio_msg)) == SUCCESS) {
           busy = TRUE;
-          dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SEND_DONE] Message sent from queue\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
+          //dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SEND_DONE] Message sent from queue\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
         }
-      }*/
+      }
+      busy = FALSE;
     }
   }
 
