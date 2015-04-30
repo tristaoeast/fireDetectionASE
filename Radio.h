@@ -6,6 +6,7 @@
 #define SMOKE 2
 #define SIMULATE_FIRE 3
 #define PUT_OUT_FIRE 4
+#define ASSIGN_SNODE 5
 
  
 enum {
