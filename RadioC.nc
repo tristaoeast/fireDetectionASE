@@ -159,22 +159,20 @@
             dbg("debug", "[ASSIGN_SNODE] Sensor Node %d assgined to Routing Node %d.\n", TOS_NODE_ID, rpkt->nodeid);
           }
           else{
-            if (!busy) {
+           // if (!busy) {
               radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
               rpktR->nodeid = rpkt->nodeid;
               rpktR->dest = rpkt->dest;
               rpktR->msg_type = rpkt->msg_type;
-
+              dbg("debug", "ENTREIIIII\n");
 
               if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
                 busy = TRUE;
-                dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> SMOKE DETECTED!!!\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
+                dbg("debug", "[ASSIGN_SNODE TRANSMITTED] Sensor Node %d assgined to Routing Node %d.\n", TOS_NODE_ID, rpkt->nodeid);
               }
-            }
+            //}
           }
-          //TODO: else if reencaminhar mensagem caso 
         }
-
       }
       else if(rpkt->msg_type == SIMULATE_FIRE){
         dbg("debug", "RECEIVED FIRE!!!!\n");
