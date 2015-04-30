@@ -45,7 +45,7 @@ class Server():
                 # print " ", s[0], " ", s[1], " ", s[2]
                 self.debug.write(s[0] + " " + s[1] + " " + s[2] + "\n")
                 radio.add(int(s[0]), int(s[1]), float(s[2]))
-                self.debug.write(s[1] + " " + s[2] + " " + s[2] + "\n")
+                self.debug.write(s[1] + " " + s[0] + " " + s[2] + "\n")
                 radio.add(int(s[1]), int(s[0]), float(s[2]))
                 # Verify node type and add to respective set
                 if 0 != int(s[0]):
@@ -151,16 +151,33 @@ class Server():
 
     def simulateFire(self):
         t = self.tossim
+
+        while(1):
+            self.printMenu()
+            iTemp = raw_input("Select a Sensor Node to trigger the fire: ")
+            print ""
+            try:
+                i = int(iTemp)
+            except ValueError:
+                print "ERROR: Invalid input type."
+                print ""
+                continue
+            if not(i in self.sensors):
+                print "ERROR: Invalid sensor node selected"
+                print ""
+                continue
+            break
+
         #inject packet to simulate fire
         msg = RadioMsg()
         msg.set_msg_type(3)
-        msg.set_dest(101)
+        msg.set_dest(i)
         pkt = t.newPacket()
         pkt.setData(msg.data)
         pkt.setType(msg.get_amType())
-        pkt.setDestination(101)
+        pkt.setDestination(i)
         pkt.setSource(0)
-        pkt.deliverNow(101)
+        pkt.deliverNow(i)
 
 
     def simulateRoutingNodeMalfunction(self):
@@ -188,6 +205,23 @@ class Server():
 
     def putOutFire(self):
         t = self.tossim
+
+        while(1):
+            self.printMenu()
+            iTemp = raw_input("Select a Sensor Node to put out the fire: ")
+            print ""
+            try:
+                i = int(iTemp)
+            except ValueError:
+                print "ERROR: Invalid input type."
+                print ""
+                continue
+            if not(i in self.sensors):
+                print "ERROR: Invalid sensor node selected"
+                print ""
+                continue
+            break
+
         #inject packet to simulate fire
         msg = RadioMsg()
         msg.set_msg_type(4)
