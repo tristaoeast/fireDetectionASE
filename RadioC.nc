@@ -204,7 +204,7 @@
     if ((&pkt == msg) || (&pktQ == msg)) {
      
       //dbg("debug", "[SEND_DONE].\n");
-      while(msg_q_cnt > 0) {
+      if(msg_q_cnt > 0) {
 
         int index = msg_q_cnt - 1;
         radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pktQ, sizeof (radio_msg)));
@@ -231,10 +231,9 @@
         rpkt->smoke = msg_q[index].smoke;
         msg_q_cnt--;
 
-        dbg("debug", "[SEND_DONE] QUEUE HAS MESSAGES\n");
-
         if (call AMSend.send(AM_BROADCAST_ADDR, &pktQ, sizeof(radio_msg)) == SUCCESS) {
           busy = TRUE;
+          dbg("debug", "[SEND_DONE] SEND QUEUE MESSAGE   ****type*** :% ( %d )\n", rpkt->msg_type);
           //dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SEND_DONE] Message sent from queue\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
         }
       }
@@ -244,14 +243,14 @@
 
   event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len) {
 
-    dbg("debug", "[MSG RECEIVED] INIT\n");
+    //dbg("debug", "[MSG RECEIVED] INIT\n");
     if (len == sizeof(radio_msg)) {
       radio_msg* rpkt = (radio_msg*)payload;
-      dbg("debug", "[MSG RECEIVED] msg_type: %d\n", rpkt->msg_type);
+      //dbg("debug", "[MSG RECEIVED] msg_type: %d\n", rpkt->msg_type);
 
 
       if(rpkt->msg_type == ASSIGN_SNODE){
-        dbg("debug", "[RECEIVED ASSIGN MODE]\n");
+        //dbg("debug", "[RECEIVED ASSIGN MODE]\n");
         if(TOS_NODE_ID <= 99 && TOS_NODE_ID >= 1){
           if(rpkt->dest == TOS_NODE_ID && sensorNodeCounter < 100)
           {
@@ -322,7 +321,7 @@
         }
       }
       else if(rpkt->msg_type == SIMULATE_FIRE){
-        dbg("debug", "RECEIVED FIRE!!!!\n");
+        //dbg("debug", "RECEIVED FIRE!!!!\n");
         smokeDetected = TRUE;
         if (!busy) {
           radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
