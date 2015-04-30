@@ -6,6 +6,7 @@
 #define SMOKE 2
 #define SIMULATE_FIRE 3
 #define PUT_OUT_FIRE 4
+#define ASSIGN_SNODE 5
 
  
 enum {
@@ -17,12 +18,13 @@ enum {
 typedef nx_struct radio_msg {
 
   nx_uint8_t msg_type;
-
   nx_uint16_t nodeid;
-  nx_uint16_t counter;
-  nx_uint16_t randvalue;
-
   nx_uint16_t dest;
+
+  //REGISTER vars
+  nx_uint16_t counter;
+  nx_uint8_t randvalue;
+  nx_uint8_t routingNode;
 
   // Timestamp
   nx_uint8_t seconds;

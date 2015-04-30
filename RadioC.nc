@@ -24,7 +24,6 @@
   bool busy = FALSE;
   bool smokeDetected = FALSE;
   message_t pkt;
-  uint16_t counter = 0;
   position_t p;
   time_t rawtime;
   struct tm *info;
@@ -34,6 +33,8 @@
   int positionYSensorNodes[65000];
   int lastTimeStamp[65000];
   int lastDate[65000];
+  int mySensorNodes[100] = {0};
+  int sensorNodeCounter = 0;
   position_t pos;
 
  
@@ -61,6 +62,8 @@
         rpkt->day = info->tm_mday;
         rpkt->month = info->tm_mon;
         rpkt->year = info->tm_year+1900;
+
+        rpkt->counter = 0;
 
         pos = call gps.getPosition();
         rpkt->x = pos.x;
@@ -146,27 +149,36 @@
 
     if (len == sizeof(radio_msg)) {
       radio_msg* rpkt = (radio_msg*)payload;
-      //dbg("debug", "Message Received from %d with random value %d and counter %d.\n", rpkt->nodeid, rpkt->randvalue, rpkt->counter);
 
-      //
-      if(rpkt->msg_type == SIMULATE_FIRE){
+      if(rpkt->msg_type == ASSIGN_SNODE){
+        if(TOS_NODE_ID <= 99 && TOS_NODE_ID >= 1){
+          if(rpkt->routingNode == TOS_NODE_ID && sensorNodeCounter < 100)
+          {
+            mySensorNodes[sensorNodeCounter] = rpkt->nodeid;
+            sensorNodeCounter++;
+            dbg("debug", "[ASSIGN_SNODE] Sensor Node %d assgined to Routing Node %d.\n", TOS_NODE_ID, rpkt->nodeid);
+          }
+        }
+
+      }
+      else if(rpkt->msg_type == SIMULATE_FIRE){
         dbg("debug", "RECEIVED FIRE!!!!\n");
         smokeDetected = TRUE;
         if (!busy) {
-          radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-          rpkt->nodeid = TOS_NODE_ID;
-          rpkt->dest = 0;
-          rpkt->msg_type = SMOKE;
-          rpkt->smoke = 1;
+          radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
+          rpktR->nodeid = TOS_NODE_ID;
+          rpktR->dest = 0;
+          rpktR->msg_type = SMOKE;
+          rpktR->smoke = 1;
 
           time(&rawtime);
           info = gmtime(&rawtime);
-          rpkt->seconds = info->tm_sec;
-          rpkt->minutes = info->tm_min;
-          rpkt->hour = info->tm_hour+BST;
-          rpkt->day = info->tm_mday;
-          rpkt->month = info->tm_mon;
-          rpkt->year = info->tm_year+1900;
+          rpktR->seconds = info->tm_sec;
+          rpktR->minutes = info->tm_min;
+          rpktR->hour = info->tm_hour+BST;
+          rpktR->day = info->tm_mday;
+          rpktR->month = info->tm_mon;
+          rpktR->year = info->tm_year+1900;
 
           if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
             busy = TRUE;
@@ -269,6 +281,19 @@
             positionYSensorNodes[rpkt->nodeid] = rpkt->y;
             dbg("debug", "[REGISTER] Sensor Node %d registered with positions x: %d and y: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->x, rpkt->y, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
             dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d registered with positions x: %d and y: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y);
+            //envia mensagem ao routing node a dizer que ficou com aquele sensor node
+            if(!busy){
+                radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
+
+                rpktR->msg_type = ASSIGN_SNODE;        
+                rpktR->nodeid = rpkt->nodeid;
+                rpktR->dest = rpkt->routingNode;
+
+                if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
+                  busy = TRUE;
+                  dbg("debug", "[ASSIGN_SNODE] Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
+                }
+              }
           }
         }
 
@@ -290,6 +315,19 @@
 
             rpktR->x = rpkt->x;
             rpktR->y = rpkt->y;
+
+            if(rpkt->counter == 0){
+              //randValue 0 e 200
+              uint8_t rv = rand()%201;
+              if(rpkt->randvalue < rv){
+                rpktR->randvalue = rv;
+                rpktR->routingNode = TOS_NODE_ID;
+                rpktR->counter = rpkt->counter + 1;
+              }
+            }
+            else{
+              rpktR->counter = rpkt->counter + 1;
+            }
 
             if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
               busy = TRUE;
@@ -316,7 +354,15 @@
             } 
             else
             {
-              if(!busy){
+              int i;
+              bool mine = FALSE;
+              int id = rpkt->nodeid;
+              for(i=0; i<100; i++){
+                if(mySensorNodes[i] == id){
+                  mine = TRUE;
+                }
+              }
+              if(!busy && mine){
                 radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
 
                 rpktR->msg_type = rpkt->msg_type;        
