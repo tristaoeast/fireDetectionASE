@@ -36,6 +36,7 @@
   int mySensorNodes[100] = {0};
   int sensorNodeCounter = 0;
   position_t pos;
+  radio_msg *msg_q;
 
  
   event void Boot.booted() {
@@ -75,6 +76,9 @@
         }
         call SensorsTimer.startPeriodic(T_MEASURE);
         call SmokeTimer.startPeriodic(T_SMOKE_MEASURE);
+      }
+      else if(0 < TOS_NODE_ID && TOS_NODE_ID < 100) {
+        msg_q = (radio_msg*) malloc(sizeof(radio_msg));
       }
     }
     else {
@@ -168,7 +172,7 @@
 
               if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
                 busy = TRUE;
-                dbg("debug", "[ASSIGN_SNODE TRANSMITTED] Sensor Node %d assgined to Routing Node %d.\n", TOS_NODE_ID, rpkt->nodeid);
+                dbg("debug", "[ASSIGN_SNODE SUCCESSFUL] Sensor Node %d assgined to Routing Node %d.\n", TOS_NODE_ID, rpkt->nodeid);
               }
             //}
           }
