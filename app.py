@@ -45,7 +45,7 @@ class Server():
                 # print " ", s[0], " ", s[1], " ", s[2]
                 self.debug.write(s[0] + " " + s[1] + " " + s[2] + "\n")
                 radio.add(int(s[0]), int(s[1]), float(s[2]))
-                self.debug.write(s[1] + " " + s[2] + " " + s[2] + "\n")
+                self.debug.write(s[1] + " " + s[0] + " " + s[2] + "\n")
                 radio.add(int(s[1]), int(s[0]), float(s[2]))
                 # Verify node type and add to respective set
                 if 0 != int(s[0]):
