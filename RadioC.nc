@@ -158,6 +158,7 @@
             sensorNodeCounter++;
             dbg("debug", "[ASSIGN_SNODE] Sensor Node %d assgined to Routing Node %d.\n", TOS_NODE_ID, rpkt->nodeid);
           }
+          //TODO: else if reencaminhar mensagem caso 
         }
 
       }
@@ -279,19 +280,19 @@
             registeredNodes[rpkt->nodeid] = TRUE;
             positionXSensorNodes[rpkt->nodeid] = rpkt->x;
             positionYSensorNodes[rpkt->nodeid] = rpkt->y;
+            dbg("debug", "routingNode: %d\n", rpkt->routingNode);
             dbg("debug", "[REGISTER] Sensor Node %d registered with positions x: %d and y: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->x, rpkt->y, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
             dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d registered with positions x: %d and y: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y);
             //envia mensagem ao routing node a dizer que ficou com aquele sensor node
             if(!busy){
                 radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-
                 rpktR->msg_type = ASSIGN_SNODE;        
                 rpktR->nodeid = rpkt->nodeid;
                 rpktR->dest = rpkt->routingNode;
 
                 if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
                   busy = TRUE;
-                  dbg("debug", "[ASSIGN_SNODE] Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
+                  dbg("debug", "[ASSIGN_SNODE] Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpkt->routingNode, rpktR->nodeid);
                 }
               }
           }
@@ -316,16 +317,19 @@
             rpktR->x = rpkt->x;
             rpktR->y = rpkt->y;
 
+            dbg("debug", "COUNTER: %d\n", rpkt->counter);
             if(rpkt->counter == 0){
               //randValue 0 e 200
               uint8_t rv = rand()%201;
-              if(rpkt->randvalue < rv){
-                rpktR->randvalue = rv;
-                rpktR->routingNode = TOS_NODE_ID;
-                rpktR->counter = rpkt->counter + 1;
-              }
+
+              rpktR->routingNode = TOS_NODE_ID;
+              rpktR->randvalue = rv;
+              rpktR->counter = rpkt->counter + 1;
             }
-            else{
+            else
+            {
+              rpktR->routingNode = rpkt->routingNode;
+              rpktR->randvalue = rpkt->randvalue;
               rpktR->counter = rpkt->counter + 1;
             }
 

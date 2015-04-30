@@ -16,7 +16,7 @@ class Server():
     def runServer(self):
         self.tossim = Tossim([])
         self.radio = self.tossim.radio()
-        self.topo = "topo.txt"
+        self.topo = "topo2.txt"
         self.noise = "meyer-heavy-trimmed.txt"
         self.debug = open("debug.txt", "w")
         self.log = open("log.txt", "w")
