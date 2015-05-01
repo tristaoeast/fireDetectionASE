@@ -18,10 +18,10 @@
  
 enum {
   AM_RADIO_MSG = 6,
-  T_MEASURE = 100000, //10000 corresponds to 1 second
-  T_SMOKE_MEASURE = 10000,
-  T_ALIVE_MEASURE = 100000,
-  T_REGISTER_CHECK = 50000, // 
+  T_MEASURE = 600000, //1 minute
+  T_SMOKE_MEASURE = 10000, // 1 second
+  T_ALIVE_MEASURE = 3000000, // 5 minutes
+  T_REGISTER_CHECK = 100000, //   10 seconds
 };
  
 typedef nx_struct radio_msg {
@@ -32,7 +32,6 @@ typedef nx_struct radio_msg {
 
   //REGISTER vars
   nx_uint16_t counter;
-  nx_uint8_t randvalue;
   nx_uint8_t routingNode;
 
   // Timestamp

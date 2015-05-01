@@ -275,7 +275,6 @@
         rpkt->nodeid = msg_q[ind].nodeid;
         rpkt->dest = msg_q[ind].dest;
         rpkt->counter = msg_q[ind].counter;
-        rpkt->randvalue = msg_q[ind].randvalue;
         rpkt->routingNode = msg_q[ind].routingNode;
         rpkt->seconds = msg_q[ind].seconds;
         rpkt->minutes = msg_q[ind].minutes;
@@ -760,17 +759,12 @@
               rpktR->y = rpkt->y;
 
               if(rpkt->counter == 0){
-                //randValue 0 e 200
-                uint8_t rv = rand()%201;
-
                 rpktR->routingNode = TOS_NODE_ID;
-                rpktR->randvalue = rv;
                 rpktR->counter = rpkt->counter + 1;
               }
               else
               {
                 rpktR->routingNode = rpkt->routingNode;
-                rpktR->randvalue = rpkt->randvalue;
                 rpktR->counter = rpkt->counter + 1;
               }
 
@@ -796,18 +790,13 @@
               msg_q[msg_q_cnt].y = rpkt->y;
 
               if(rpkt->counter == 0){
-                //randValue 0 e 200
-                uint8_t rv = rand()%201;
-
                 msg_q[msg_q_cnt].routingNode = TOS_NODE_ID;
-                msg_q[msg_q_cnt].randvalue = rv;
                 msg_q[msg_q_cnt].counter = rpkt->counter + 1;
                 msg_q_cnt++;
               }
               else
               {
                 msg_q[msg_q_cnt].routingNode = rpkt->routingNode;
-                msg_q[msg_q_cnt].randvalue = rpkt->randvalue;
                 msg_q[msg_q_cnt].counter = rpkt->counter + 1;
                 msg_q_cnt++;
               }          
