@@ -1,6 +1,5 @@
 #include "gps.h"
 #include <stdlib.h>
-#include <time.h>
 
 module gpsC {
 	uses interface Boot;

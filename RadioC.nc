@@ -1,7 +1,7 @@
  #include <Timer.h>
  #include "Radio.h"
- #include <time.h>
  #include "gps.h"
+ #include "c_time.h"
  
  module RadioC @safe() {
   uses {
@@ -26,9 +26,10 @@
   message_t pkt;
   message_t pktQ;
   position_t p;
-  time_t rawtime;
-  struct tm *info;
+  //time_t rawtime;
+  //struct tm *info;
   int BST = 1;
+  c_time_t c_info;
 
   int lastRegisterTS = 0;
   int lastRegisterD = 0;
@@ -79,14 +80,22 @@
         rpkt->nodeid = TOS_NODE_ID;
         rpkt->dest = 0;
         
-        time(&rawtime);
+        c_info = getTime();
+        rpkt->seconds = c_info.ct_sec;
+        rpkt->minutes = c_info.ct_min;
+        rpkt->hour = c_info.ct_hour;
+        rpkt->day = c_info.ct_mday;
+        rpkt->month = c_info.ct_mon;
+        rpkt->year = c_info.ct_year;
+
+        /*time(&rawtime);
         info = gmtime(&rawtime);
         rpkt->seconds = info->tm_sec;
         rpkt->minutes = info->tm_min;
         rpkt->hour = info->tm_hour+BST;
         rpkt->day = info->tm_mday;
         rpkt->month = info->tm_mon;
-        rpkt->year = info->tm_year+1900;
+        rpkt->year = info->tm_year+1900;*/
 
         rpkt->counter = 0;
 
@@ -99,14 +108,11 @@
           dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> Register message sent with coordinates x: %d and y: %d.\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year, rpkt->x, rpkt->y);
         }
         //call SensorsTimer.startPeriodic(T_MEASURE);
-        call SmokeTimer.startPeriodic(50000);
+        call SmokeTimer.startPeriodic(T_REGISTER_CHECK);
       }
       else if(0 == TOS_NODE_ID){
         call SmokeTimer.startPeriodic(T_ALIVE_MEASURE);
       }
-     /* else if(0 < TOS_NODE_ID && TOS_NODE_ID < 100) {
-        msg_q = (radio_msg*) malloc(sizeof(radio_msg) * 10000);
-      }*/
     }
     else {
       call AMControl.start();
@@ -132,14 +138,22 @@
           rpkt->x = pos.x;
           rpkt->y = pos.y;
 
-          time(&rawtime);
-          info = gmtime(&rawtime);
-          rpkt->seconds = info->tm_sec;
-          rpkt->minutes = info->tm_min;
-          rpkt->hour = info->tm_hour+BST;
-          rpkt->day = info->tm_mday;
-          rpkt->month = info->tm_mon;
-          rpkt->year = info->tm_year+1900;
+        c_info = getTime();
+        rpkt->seconds = c_info.ct_sec;
+        rpkt->minutes = c_info.ct_min;
+        rpkt->hour = c_info.ct_hour;
+        rpkt->day = c_info.ct_mday;
+        rpkt->month = c_info.ct_mon;
+        rpkt->year = c_info.ct_year;
+
+        /*time(&rawtime);
+        info = gmtime(&rawtime);
+        rpkt->seconds = info->tm_sec;
+        rpkt->minutes = info->tm_min;
+        rpkt->hour = info->tm_hour+BST;
+        rpkt->day = info->tm_mday;
+        rpkt->month = info->tm_mon;
+        rpkt->year = info->tm_year+1900;*/
 
           if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
             busy = TRUE;
@@ -157,14 +171,22 @@
           rpkt->nodeid = TOS_NODE_ID;
           rpkt->dest = 0;
           
-          time(&rawtime);
-          info = gmtime(&rawtime);
-          rpkt->seconds = info->tm_sec;
-          rpkt->minutes = info->tm_min;
-          rpkt->hour = info->tm_hour+BST;
-          rpkt->day = info->tm_mday;
-          rpkt->month = info->tm_mon;
-          rpkt->year = info->tm_year+1900;
+        c_info = getTime();
+        rpkt->seconds = c_info.ct_sec;
+        rpkt->minutes = c_info.ct_min;
+        rpkt->hour = c_info.ct_hour;
+        rpkt->day = c_info.ct_mday;
+        rpkt->month = c_info.ct_mon;
+        rpkt->year = c_info.ct_year;
+
+        /*time(&rawtime);
+        info = gmtime(&rawtime);
+        rpkt->seconds = info->tm_sec;
+        rpkt->minutes = info->tm_min;
+        rpkt->hour = info->tm_hour+BST;
+        rpkt->day = info->tm_mday;
+        rpkt->month = info->tm_mon;
+        rpkt->year = info->tm_year+1900;*/
 
           rpkt->counter = 0;
 
@@ -183,9 +205,10 @@
     else if (0 == TOS_NODE_ID){
       int i;
       int ts;
-      time(&rawtime);
-      info = gmtime(&rawtime);
-      ts = (info->tm_hour+BST)*10000 + info->tm_min*100 + info->tm_sec;
+      c_info = getTime();
+      /*time(&rawtime);
+      info = gmtime(&rawtime);*/
+      ts = (c_info.ct_hour)*10000 + c_info.ct_min*100 + c_info.ct_sec;
 
       for(i = 100; i < sensorNodeCounter+100; i++){
         int lts = lastTimeStamp[i];
@@ -199,14 +222,22 @@
             rpkt->msg_type = RE_REGISTER;        
             rpkt->dest = i;
             
-            time(&rawtime);
-            info = gmtime(&rawtime);
-            rpkt->seconds = info->tm_sec;
-            rpkt->minutes = info->tm_min;
-            rpkt->hour = info->tm_hour+BST;
-            rpkt->day = info->tm_mday;
-            rpkt->month = info->tm_mon;
-            rpkt->year = info->tm_year+1900;
+        c_info = getTime();
+        rpkt->seconds = c_info.ct_sec;
+        rpkt->minutes = c_info.ct_min;
+        rpkt->hour = c_info.ct_hour;
+        rpkt->day = c_info.ct_mday;
+        rpkt->month = c_info.ct_mon;
+        rpkt->year = c_info.ct_year;
+
+        /*time(&rawtime);
+        info = gmtime(&rawtime);
+        rpkt->seconds = info->tm_sec;
+        rpkt->minutes = info->tm_min;
+        rpkt->hour = info->tm_hour+BST;
+        rpkt->day = info->tm_mday;
+        rpkt->month = info->tm_mon;
+        rpkt->year = info->tm_year+1900;*/
               
             if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
               busy = TRUE;
@@ -261,14 +292,22 @@
       }
       rpkt->counter = 0;
 
-      time(&rawtime);
-      info = gmtime(&rawtime);
-      rpkt->seconds = info->tm_sec;
-      rpkt->minutes = info->tm_min;
-      rpkt->hour = info->tm_hour+BST;
-      rpkt->day = info->tm_mday;
-      rpkt->month = info->tm_mon;
-      rpkt->year = info->tm_year+1900;
+        c_info = getTime();
+        rpkt->seconds = c_info.ct_sec;
+        rpkt->minutes = c_info.ct_min;
+        rpkt->hour = c_info.ct_hour;
+        rpkt->day = c_info.ct_mday;
+        rpkt->month = c_info.ct_mon;
+        rpkt->year = c_info.ct_year;
+
+        /*time(&rawtime);
+        info = gmtime(&rawtime);
+        rpkt->seconds = info->tm_sec;
+        rpkt->minutes = info->tm_min;
+        rpkt->hour = info->tm_hour+BST;
+        rpkt->day = info->tm_mday;
+        rpkt->month = info->tm_mon;
+        rpkt->year = info->tm_year+1900;*/
 
       if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
         busy = TRUE;
@@ -367,14 +406,22 @@
               rpktR->nodeid = rpkt->nodeid;
               rpktR->dest = rpkt->dest;
  
-              time(&rawtime);
+              c_info = getTime();
+              rpkt->seconds = c_info.ct_sec;
+              rpkt->minutes = c_info.ct_min;
+              rpkt->hour = c_info.ct_hour;
+              rpkt->day = c_info.ct_mday;
+              rpkt->month = c_info.ct_mon;
+              rpkt->year = c_info.ct_year;
+
+              /*time(&rawtime);
               info = gmtime(&rawtime);
-              rpktR->seconds = info->tm_sec;
-              rpktR->minutes = info->tm_min;
-              rpktR->hour = info->tm_hour+BST;
-              rpktR->day = info->tm_mday;
-              rpktR->month = info->tm_mon;
-              rpktR->year = info->tm_year+1900;
+              rpkt->seconds = info->tm_sec;
+              rpkt->minutes = info->tm_min;
+              rpkt->hour = info->tm_hour+BST;
+              rpkt->day = info->tm_mday;
+              rpkt->month = info->tm_mon;
+              rpkt->year = info->tm_year+1900;*/
   
               if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
                 busy = TRUE;
@@ -393,14 +440,23 @@
               msg_q[msg_q_cnt].routingNode=0;
 
               // Timestamp
-              time(&rawtime);
+              c_info = getTime();
+              msg_q[msg_q_cnt].seconds = c_info.ct_sec;
+              msg_q[msg_q_cnt].minutes = c_info.ct_min;
+              msg_q[msg_q_cnt].hour = c_info.ct_hour;
+              msg_q[msg_q_cnt].day = c_info.ct_mday;
+              msg_q[msg_q_cnt].month = c_info.ct_mon;
+              msg_q[msg_q_cnt].year = c_info.ct_year;
+
+              // Timestamp
+              /*time(&rawtime);
               info = gmtime(&rawtime);
               msg_q[msg_q_cnt].seconds = info->tm_sec;
               msg_q[msg_q_cnt].minutes = info->tm_min;
               msg_q[msg_q_cnt].hour = info->tm_hour+BST;
               msg_q[msg_q_cnt].day = info->tm_mday;
               msg_q[msg_q_cnt].month = info->tm_mon;
-              msg_q[msg_q_cnt].year = info->tm_year+1900;
+              msg_q[msg_q_cnt].year = info->tm_year+1900;*/
 
               // GPS coordinates
               msg_q[msg_q_cnt].x=0;
@@ -517,14 +573,23 @@
                   msg_q[msg_q_cnt].routingNode=0;
 
                   // Timestamp
-                  time(&rawtime);
+                  c_info = getTime();
+                  msg_q[msg_q_cnt].seconds = c_info.ct_sec;
+                  msg_q[msg_q_cnt].minutes = c_info.ct_min;
+                  msg_q[msg_q_cnt].hour = c_info.ct_hour;
+                  msg_q[msg_q_cnt].day = c_info.ct_mday;
+                  msg_q[msg_q_cnt].month = c_info.ct_mon;
+                  msg_q[msg_q_cnt].year = c_info.ct_year;
+
+                  // Timestamp
+                  /*time(&rawtime);
                   info = gmtime(&rawtime);
                   msg_q[msg_q_cnt].seconds = info->tm_sec;
                   msg_q[msg_q_cnt].minutes = info->tm_min;
                   msg_q[msg_q_cnt].hour = info->tm_hour+BST;
                   msg_q[msg_q_cnt].day = info->tm_mday;
                   msg_q[msg_q_cnt].month = info->tm_mon;
-                  msg_q[msg_q_cnt].year = info->tm_year+1900;
+                  msg_q[msg_q_cnt].year = info->tm_year+1900;*/
 
                   // GPS coordinates
                   msg_q[msg_q_cnt].x=0;
@@ -575,14 +640,23 @@
                 msg_q[msg_q_cnt].routingNode=0;
 
                 // Timestamp
-                time(&rawtime);
+                c_info = getTime();
+                msg_q[msg_q_cnt].seconds = c_info.ct_sec;
+                msg_q[msg_q_cnt].minutes = c_info.ct_min;
+                msg_q[msg_q_cnt].hour = c_info.ct_hour;
+                msg_q[msg_q_cnt].day = c_info.ct_mday;
+                msg_q[msg_q_cnt].month = c_info.ct_mon;
+                msg_q[msg_q_cnt].year = c_info.ct_year;
+
+                // Timestamp
+                /*time(&rawtime);
                 info = gmtime(&rawtime);
                 msg_q[msg_q_cnt].seconds = info->tm_sec;
                 msg_q[msg_q_cnt].minutes = info->tm_min;
                 msg_q[msg_q_cnt].hour = info->tm_hour+BST;
                 msg_q[msg_q_cnt].day = info->tm_mday;
                 msg_q[msg_q_cnt].month = info->tm_mon;
-                msg_q[msg_q_cnt].year = info->tm_year+1900;
+                msg_q[msg_q_cnt].year = info->tm_year+1900;*/
 
                 // GPS coordinates
                 msg_q[msg_q_cnt].x=0;
@@ -629,14 +703,22 @@
           rpktR->msg_type = SMOKE;
           rpktR->smoke = 1;
 
-          time(&rawtime);
+          c_info = getTime();
+          rpkt->seconds = c_info.ct_sec;
+          rpkt->minutes = c_info.ct_min;
+          rpkt->hour = c_info.ct_hour;
+          rpkt->day = c_info.ct_mday;
+          rpkt->month = c_info.ct_mon;
+          rpkt->year = c_info.ct_year;
+
+          /*time(&rawtime);
           info = gmtime(&rawtime);
-          rpktR->seconds = info->tm_sec;
-          rpktR->minutes = info->tm_min;
-          rpktR->hour = info->tm_hour+BST;
-          rpktR->day = info->tm_mday;
-          rpktR->month = info->tm_mon;
-          rpktR->year = info->tm_year+1900;
+          rpkt->seconds = info->tm_sec;
+          rpkt->minutes = info->tm_min;
+          rpkt->hour = info->tm_hour+BST;
+          rpkt->day = info->tm_mday;
+          rpkt->month = info->tm_mon;
+          rpkt->year = info->tm_year+1900;*/
 
           if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
             busy = TRUE;
@@ -748,14 +830,22 @@
                 rpktR->nodeid = rpkt->nodeid;
                 rpktR->dest = registeredNodes[rpkt->nodeid];
 
-                time(&rawtime);
+                c_info = getTime();
+                rpkt->seconds = c_info.ct_sec;
+                rpkt->minutes = c_info.ct_min;
+                rpkt->hour = c_info.ct_hour;
+                rpkt->day = c_info.ct_mday;
+                rpkt->month = c_info.ct_mon;
+                rpkt->year = c_info.ct_year;
+
+                /*time(&rawtime);
                 info = gmtime(&rawtime);
-                rpktR->seconds = info->tm_sec;
-                rpktR->minutes = info->tm_min;
-                rpktR->hour = info->tm_hour+BST;
-                rpktR->day = info->tm_mday;
-                rpktR->month = info->tm_mon;
-                rpktR->year = info->tm_year+1900;
+                rpkt->seconds = info->tm_sec;
+                rpkt->minutes = info->tm_min;
+                rpkt->hour = info->tm_hour+BST;
+                rpkt->day = info->tm_mday;
+                rpkt->month = info->tm_mon;
+                rpkt->year = info->tm_year+1900;*/
 
                 if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
                   busy = TRUE;
@@ -774,14 +864,23 @@
                 msg_q[msg_q_cnt].routingNode=0;
 
                 // Timestamp
-                time(&rawtime);
+                c_info = getTime();
+                msg_q[msg_q_cnt].seconds = c_info.ct_sec;
+                msg_q[msg_q_cnt].minutes = c_info.ct_min;
+                msg_q[msg_q_cnt].hour = c_info.ct_hour;
+                msg_q[msg_q_cnt].day = c_info.ct_mday;
+                msg_q[msg_q_cnt].month = c_info.ct_mon;
+                msg_q[msg_q_cnt].year = c_info.ct_year;
+
+                // Timestamp
+                /*time(&rawtime);
                 info = gmtime(&rawtime);
                 msg_q[msg_q_cnt].seconds = info->tm_sec;
                 msg_q[msg_q_cnt].minutes = info->tm_min;
                 msg_q[msg_q_cnt].hour = info->tm_hour+BST;
                 msg_q[msg_q_cnt].day = info->tm_mday;
                 msg_q[msg_q_cnt].month = info->tm_mon;
-                msg_q[msg_q_cnt].year = info->tm_year+1900;
+                msg_q[msg_q_cnt].year = info->tm_year+1900;*/
 
                 // GPS coordinates
                 msg_q[msg_q_cnt].x=0;
@@ -813,14 +912,22 @@
               rpktR->nodeid = rpkt->nodeid;
               rpktR->dest = rpkt->routingNode;
 
-              time(&rawtime);
+              c_info = getTime();
+              rpkt->seconds = c_info.ct_sec;
+              rpkt->minutes = c_info.ct_min;
+              rpkt->hour = c_info.ct_hour;
+              rpkt->day = c_info.ct_mday;
+              rpkt->month = c_info.ct_mon;
+              rpkt->year = c_info.ct_year;
+
+              /*time(&rawtime);
               info = gmtime(&rawtime);
-              rpktR->seconds = info->tm_sec;
-              rpktR->minutes = info->tm_min;
-              rpktR->hour = info->tm_hour+BST;
-              rpktR->day = info->tm_mday;
-              rpktR->month = info->tm_mon;
-              rpktR->year = info->tm_year+1900;
+              rpkt->seconds = info->tm_sec;
+              rpkt->minutes = info->tm_min;
+              rpkt->hour = info->tm_hour+BST;
+              rpkt->day = info->tm_mday;
+              rpkt->month = info->tm_mon;
+              rpkt->year = info->tm_year+1900;*/
 
               if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
                 busy = TRUE;
@@ -839,14 +946,23 @@
               msg_q[msg_q_cnt].routingNode=0;
 
               // Timestamp
-              time(&rawtime);
+              c_info = getTime();
+              msg_q[msg_q_cnt].seconds = c_info.ct_sec;
+              msg_q[msg_q_cnt].minutes = c_info.ct_min;
+              msg_q[msg_q_cnt].hour = c_info.ct_hour;
+              msg_q[msg_q_cnt].day = c_info.ct_mday;
+              msg_q[msg_q_cnt].month = c_info.ct_mon;
+              msg_q[msg_q_cnt].year = c_info.ct_year;
+
+              // Timestamp
+              /*time(&rawtime);
               info = gmtime(&rawtime);
               msg_q[msg_q_cnt].seconds = info->tm_sec;
               msg_q[msg_q_cnt].minutes = info->tm_min;
               msg_q[msg_q_cnt].hour = info->tm_hour+BST;
               msg_q[msg_q_cnt].day = info->tm_mday;
               msg_q[msg_q_cnt].month = info->tm_mon;
-              msg_q[msg_q_cnt].year = info->tm_year+1900;
+              msg_q[msg_q_cnt].year = info->tm_year+1900;*/
 
               // GPS coordinates
               msg_q[msg_q_cnt].x=0;
@@ -1026,56 +1142,6 @@
               }
             }
           }
-          //tempo (horas) recebido e menor que o da ultima mensagem
-          /*else
-          {
-            //vai ver a data, se a data recebida for maior guarda esses novos valores no log
-            if((dateMsg > lastDate[rpkt->nodeid]) && (lastDate[rpkt->nodeid] != 0)){
-              lastTimeStamp[rpkt->nodeid] = timestampMsg;
-              lastDate[rpkt->nodeid] = dateMsg;
-              //dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
-              if(TOS_NODE_ID == 0)
-              {
-                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [MEASURE] Sensor Node %d located at x: %d and y: %d measured humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->humidity, rpkt->temperature);
-                dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d located at x: %d and y: %d measured humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->humidity, rpkt->temperature);
-              }
-              else
-              {              
-                int i;
-                bool mine = FALSE;
-                int id = rpkt->nodeid;
-                //dbg("debug", "++++++++ COUNTER: %d ++++++++\n", rpkt->counter);
-                for(i=0; i<100; i++){
-                  if(mySensorNodes[i] == id){
-                    mine = TRUE;
-                    break;
-                  }
-                }
-                if(!busy && ((mine && rpkt->counter == 0) || (rpkt->counter > 0 && !mine))) {
-                  radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-
-                  rpktR->msg_type = rpkt->msg_type;        
-                  rpktR->nodeid = rpkt->nodeid;
-                  rpktR->dest = rpkt->dest;
-                  
-                  rpktR->seconds = rpkt->seconds;
-                  rpktR->minutes = rpkt->minutes;
-                  rpktR->hour = rpkt->hour;
-                  rpktR->day = rpkt->day;
-                  rpktR->month = rpkt->month;
-                  rpktR->year = rpkt->year;
-
-                  rpktR->humidity = rpkt->humidity;
-                  rpktR->temperature = rpkt->temperature;
-
-                  if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
-                    busy = TRUE;
-                    dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [MEASURE] Message Sent from %d to %d (init in sensorNode %d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
-                  }
-                }
-              }
-            }
-          }*/
         }
       }
     }

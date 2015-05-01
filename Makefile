@@ -14,3 +14,4 @@ RadioMsg.java: Radio.h
 
 include $(MAKERULES)
 
+PFLAGS += c_time.c

@@ -21,7 +21,7 @@ enum {
   T_MEASURE = 100000, //10000 corresponds to 1 second
   T_SMOKE_MEASURE = 10000,
   T_ALIVE_MEASURE = 100000,
-  T_REGISTER_CHECK = 50000, // 
+  T_REGISTER_CHECK = 10000, // 
 };
  
 typedef nx_struct radio_msg {
