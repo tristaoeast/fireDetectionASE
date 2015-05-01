@@ -12,12 +12,14 @@
 #define SIMULATE_HUMIDITY_MALFUNCTION 8
 #define SIMULATE_TEMPERATURE_MALFUNCTION 9
 #define RESTORE_MALFUNCTION 10
+#define RE_REGISTER 11
 
  
 enum {
   AM_RADIO_MSG = 6,
   T_MEASURE = 100000, //10000 corresponds to 1 second
   T_SMOKE_MEASURE = 10000,
+  T_ALIVE_MEASURE = 3000000, // 5 minutes
 };
  
 typedef nx_struct radio_msg {
