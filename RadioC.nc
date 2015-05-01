@@ -32,10 +32,10 @@
   bool registeredNodes[10000] = { FALSE };
   int positionXSensorNodes[10000];
   int positionYSensorNodes[10000];
-  int lastTimeStamp[10000];
-  int lastDate[10000];
-  int lastTimeStampRegister[10000];
-  int lastDateRegister[10000];
+  int lastTimeStamp[10000] = {0};
+  int lastDate[10000] = {0};
+  int lastTimeStampRegister[10000] = {0};
+  int lastDateRegister[10000] = {0};
   int mySensorNodes[100] = {0};
   int sensorNodeCounter = 0;
   position_t pos;
