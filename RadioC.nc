@@ -909,9 +909,11 @@
             } 
             else
             {
+
               int i;
               bool mine = FALSE;
               int id = rpkt->nodeid;
+              dbg("debug", "++++++++ COUNTER: %d ++++++++\n", rpkt->counter);
               for(i=0; i<100; i++){
                 if(mySensorNodes[i] == id){
                   mine = TRUE;
@@ -924,6 +926,9 @@
                 rpktR->msg_type = rpkt->msg_type;        
                 rpktR->nodeid = rpkt->nodeid;
                 rpktR->dest = rpkt->dest;
+                rpktR->x = rpkt->x;
+                rpktR->y = rpkt->y;
+                rpktR->counter = rpkt->counter + 1;
                 
                 rpktR->seconds = rpkt->seconds;
                 rpktR->minutes = rpkt->minutes;
