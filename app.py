@@ -112,14 +112,16 @@ class Server():
         print "[4] Check log file content"
         print ""
         print "[5] Put out fire"
-        print "[6] Check debug file content"
+        print "[6] Restore modules functions to normal in Sensor Node"
+        print "[7] Bring Routing Node Back Online"
+        print "[8] Check debug file content"
         print ""
         print "[0] Exit"
 
     def readInput(self):
         while(1):
             self.printMenu()
-            iTemp = raw_input("Select an option [0-6]: ")
+            iTemp = raw_input("Select an option [0-8]: ")
             print ""
             try:
                 i = int(iTemp)
@@ -127,7 +129,7 @@ class Server():
                 print "ERROR: Invalid input type."
                 print ""
                 continue
-            if(i < 0 or i > 6):
+            if(i < 0 or i > 8):
                 print "ERROR: Invalid option selected"
                 print ""
                 continue
@@ -145,7 +147,9 @@ class Server():
             3: self.simulateSensorNodeModuleMalfunction,
             4: self.checkLogFile,
             5: self.putOutFire,
-            6: self.checkDebugFile
+            6: self.restoreModulesFunctions,
+            7: self.routingNodeBackOnline,
+            8: self.checkDebugFile
         }
         options[i]()
 
@@ -153,7 +157,6 @@ class Server():
         t = self.tossim
 
         while(1):
-            self.printMenu()
             iTemp = raw_input("Select a Sensor Node to trigger the fire [look at topo]: ")
             print ""
             try:
@@ -281,7 +284,6 @@ class Server():
         t = self.tossim
 
         while(1):
-            self.printMenu()
             iTemp = raw_input("Select a Sensor Node to put out the fire: ")
             print ""
             try:
@@ -302,9 +304,55 @@ class Server():
         pkt = t.newPacket()
         pkt.setData(msg.data)
         pkt.setType(msg.get_amType())
-        pkt.setDestination(101)
+        pkt.setDestination(i)
         pkt.setSource(0)
-        pkt.deliverNow(101)
+        pkt.deliverNow(i)
+
+    def restoreModulesFunctions(self):
+        t = self.tossim
+
+        while(1):
+            iTemp = raw_input("Select a Sensor Node to restore modules functions: ")
+            print ""
+            try:
+                i = int(iTemp)
+            except ValueError:
+                print "ERROR: Invalid input type."
+                print ""
+                continue
+            if not(i in self.sensors):
+                print "ERROR: Invalid sensor node selected"
+                print ""
+                continue
+            break
+
+        #inject packet to simulate fire
+        msg = RadioMsg()
+        msg.set_msg_type(10)
+        pkt = t.newPacket()
+        pkt.setData(msg.data)
+        pkt.setType(msg.get_amType())
+        pkt.setDestination(i)
+        pkt.setSource(0)
+        pkt.deliverNow(i)
+
+    def routingNodeBackOnline(self):
+        t = self.tossim
+
+        while(1):
+            iTemp = raw_input("Select a Routing Node to bring back online [look at topo]: ")
+            print ""
+            try:
+                i = int(iTemp)
+            except ValueError:
+                print "ERROR: Invalid input type."
+                print ""
+                continue
+            break
+
+        if not(0 == i):
+            m = t.getNode(i)
+            m.turnOn()
 
 
 class ThreadedEvents(threading.Thread):
