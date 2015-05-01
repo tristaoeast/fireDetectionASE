@@ -252,7 +252,7 @@
 
 
       if(rpkt->msg_type == ASSIGN_SNODE){
-        //dbg("debug", "[RECEIVED ASSIGN MODE]\n");
+        dbg("debug", "[RECEIVED ASSIGN MODE]\n");
         if(TOS_NODE_ID <= 99 && TOS_NODE_ID >= 1){
           if(rpkt->dest == TOS_NODE_ID && sensorNodeCounter < 100)
           {
