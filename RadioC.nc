@@ -122,57 +122,58 @@
         }
       }
     }
-    /*else {
-      dbg("debug", "############### IM ALIVE ############### MSG_Q_CNT: %d\n", msg_q_cnt);
+    else {
+      //dbg("debug", "############### IM ALIVE ############### MSG_Q_CNT: %d\n", msg_q_cnt);
       if(!busy && msg_q_cnt > 0) {
         int index = msg_q_cnt - 1;
         radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-        dbg("debug", "[SEND_DONE] 1\n");
+        //dbg("debug", "[SEND_DONE] 1\n");
         rpkt->msg_type = msg_q[index].msg_type;
-        dbg("debug", "[SEND_DONE] 2\n");
+        //dbg("debug", "[SEND_DONE] 2\n");
         rpkt->nodeid = msg_q[index].nodeid;
-        dbg("debug", "[SEND_DONE] 3\n");
+        //dbg("debug", "[SEND_DONE] 3\n");
         rpkt->dest = msg_q[index].dest;
-        dbg("debug", "[SEND_DONE] 4\n");
+        //dbg("debug", "[SEND_DONE] 4\n");
         rpkt->counter = msg_q[index].counter;
-        dbg("debug", "[SEND_DONE] 5\n");
+        //dbg("debug", "[SEND_DONE] 5\n");
         rpkt->randvalue = msg_q[index].randvalue;
-        dbg("debug", "[SEND_DONE] 6\n");
+        //dbg("debug", "[SEND_DONE] 6\n");
         rpkt->routingNode = msg_q[index].routingNode;
-        dbg("debug", "[SEND_DONE] 7\n");
+        //dbg("debug", "[SEND_DONE] 7\n");
         rpkt->seconds = msg_q[index].seconds;
-        dbg("debug", "[SEND_DONE] 8\n");
+        //dbg("debug", "[SEND_DONE] 8\n");
         rpkt->minutes = msg_q[index].minutes;
-        dbg("debug", "[SEND_DONE] 9\n");
+        //dbg("debug", "[SEND_DONE] 9\n");
         rpkt->hour = msg_q[index].hour;
-        dbg("debug", "[SEND_DONE] 10\n");
+        //dbg("debug", "[SEND_DONE] 10\n");
         rpkt->day = msg_q[index].day;
-        dbg("debug", "[SEND_DONE] 11\n");
+        //dbg("debug", "[SEND_DONE] 11\n");
         rpkt->month = msg_q[index].month;
-        dbg("debug", "[SEND_DONE] 12\n");
+        //dbg("debug", "[SEND_DONE] 12\n");
         rpkt->year = msg_q[index].year;
-        dbg("debug", "[SEND_DONE] 13\n");
+        //dbg("debug", "[SEND_DONE] 13\n");
         rpkt->x = msg_q[index].x;
-        dbg("debug", "[SEND_DONE] 14\n");
+        //dbg("debug", "[SEND_DONE] 14\n");
         rpkt->y = msg_q[index].y;
-        dbg("debug", "[SEND_DONE] 15\n");        
+        //dbg("debug", "[SEND_DONE] 15\n");        
         rpkt->humidity = msg_q[index].humidity;
-        dbg("debug", "[SEND_DONE] 16\n");
+        //dbg("debug", "[SEND_DONE] 16\n");
         rpkt->temperature = msg_q[index].temperature;
-        dbg("debug", "[SEND_DONE] 17\n");
+        //dbg("debug", "[SEND_DONE] 17\n");
         rpkt->smoke = msg_q[index].smoke;
-        dbg("debug", "[SEND_DONE] 18\n");
+        //dbg("debug", "[SEND_DONE] 18\n");
         msg_q_cnt--;
-        dbg("debug", "[SEND_DONE] 19\n");
+        //dbg("debug", "[SEND_DONE] 19\n");
 
-        dbg("debug", "[SEND_DONE] QUEUE HAS MESSAGES\n");
+        //dbg("debug", "[SEND_DONE] QUEUE HAS MESSAGES\n");
 
         if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
           busy = TRUE;
+          dbg("debug", "[TIME SMOKE TO QUEUE] MESSAGE QUEUE SENT *******TYPE***** : ()  %d  )", rpkt->msg_type);
           //dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SEND_DONE] Message sent from queue\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
         }
       }
-    }*/
+    }
   }
  
   event void SensorsTimer.fired() {
@@ -206,7 +207,7 @@
     if ((&pkt == msg) || (&pktQ == msg)) {
      
       //dbg("debug", "[SEND_DONE].\n");
-      if(msg_q_cnt > 0) {
+     /* if(msg_q_cnt > 0) {
 
         int index = msg_q_cnt - 1;
         radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pktQ, sizeof (radio_msg)));
@@ -238,7 +239,7 @@
           dbg("debug", "[SEND_DONE] SEND QUEUE MESSAGE   ****type*** :% ( %d )\n", rpkt->msg_type);
           //dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SEND_DONE] Message sent from queue\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
         }
-      }
+      }*/
       busy = FALSE;
     }
   }
