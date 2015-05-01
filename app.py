@@ -265,20 +265,20 @@ class Server():
 
     def checkLogFile(self):
         shutil.copy2("log.txt", "logTemp.txt")
-        self.sp = Popen('gedit logTemp.txt', shell=True)
-        #d = open("log.txt", "r")
-        #for line in d:
-        #    print line
-        #d.close()
+        #self.sp = Popen('gedit logTemp.txt', shell=True)
+        d = open("logTemp.txt")
+        for line in d:
+            print line
+        d.close()
 
     def checkDebugFile(self):
         shutil.copy2("debug.txt", "debugTemp.txt")
-        self.sp = Popen('gedit debugTemp.txt', shell=True)
+        #self.sp = Popen('gedit debugTemp.txt', shell=True)
         #call(["gedit", "debugTemp.txt"])
-        #d = open("debugTemp.txt")
-        #for line in d:
-        #    print line
-        #d.close()
+        d = open("debugTemp.txt")
+        for line in d:
+            print line
+        d.close()
 
     def putOutFire(self):
         t = self.tossim

@@ -18,8 +18,8 @@
  
 enum {
   AM_RADIO_MSG = 6,
-  T_MEASURE = 600000, //1 minute
-  T_SMOKE_MEASURE = 10000, // 1 second
+  T_MEASURE = 600000, //1 minute -> 6000000 = 60 seconds
+  T_SMOKE_MEASURE = 150000, // 15 seconds
   T_ALIVE_MEASURE = 3000000, // 5 minutes
   T_REGISTER_CHECK = 100000, //   10 seconds
 };
