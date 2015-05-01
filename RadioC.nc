@@ -34,6 +34,8 @@
   int positionYSensorNodes[10000];
   int lastTimeStamp[10000];
   int lastDate[10000];
+  int lastTimeStampRegister[10000];
+  int lastDateRegister[10000];
   int mySensorNodes[100] = {0};
   int sensorNodeCounter = 0;
   position_t pos;
@@ -492,90 +494,186 @@
 
         //ROUTING NODES
         else if( TOS_NODE_ID <= 99 && TOS_NODE_ID >= 1){
-          if(!busy){
+          //verificar se ja recebeu a mesma msg antes
+          int timestampMsg = rpkt->hour*10000 + rpkt->minutes*100 + rpkt->seconds;
+          int dateMsg = rpkt->year*10000 + rpkt->minutes*100 + rpkt->seconds;
+          //tempo (horas) recebido e maior que o da ultima mensagem recebida
+          if(timestampMsg > lastTimeStampRegister[rpkt->nodeid]){
+            lastTimeStampRegister[rpkt->nodeid] = timestampMsg;
+            lastDateRegister[rpkt->nodeid] = dateMsg;
+            if(!busy){
 
-            radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-            dbg("debug", "[REGISTER -RN] RN: %d\n", TOS_NODE_ID);
-            rpktR->msg_type = rpkt->msg_type;        
-            rpktR->nodeid = rpkt->nodeid;
-            rpktR->dest = rpkt->dest;
-            
-            rpktR->seconds = rpkt->seconds;
-            rpktR->minutes = rpkt->minutes;
-            rpktR->hour = rpkt->hour;
-            rpktR->day = rpkt->day;
-            rpktR->month = rpkt->month;
-            rpktR->year = rpkt->year;
+              radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
+              dbg("debug", "[REGISTER -RN] RN: %d\n", TOS_NODE_ID);
+              rpktR->msg_type = rpkt->msg_type;        
+              rpktR->nodeid = rpkt->nodeid;
+              rpktR->dest = rpkt->dest;
+              
+              rpktR->seconds = rpkt->seconds;
+              rpktR->minutes = rpkt->minutes;
+              rpktR->hour = rpkt->hour;
+              rpktR->day = rpkt->day;
+              rpktR->month = rpkt->month;
+              rpktR->year = rpkt->year;
 
-            rpktR->x = rpkt->x;
-            rpktR->y = rpkt->y;
+              rpktR->x = rpkt->x;
+              rpktR->y = rpkt->y;
 
-            //dbg("debug", "COUNTER: %d\n", rpkt->counter);
-            if(rpkt->counter == 0){
-              //randValue 0 e 200
-              uint8_t rv = rand()%201;
+              //dbg("debug", "COUNTER: %d\n", rpkt->counter);
+              if(rpkt->counter == 0){
+                //randValue 0 e 200
+                uint8_t rv = rand()%201;
 
-              rpktR->routingNode = TOS_NODE_ID;
-              rpktR->randvalue = rv;
-              rpktR->counter = rpkt->counter + 1;
+                rpktR->routingNode = TOS_NODE_ID;
+                rpktR->randvalue = rv;
+                rpktR->counter = rpkt->counter + 1;
+              }
+              else
+              {
+                rpktR->routingNode = rpkt->routingNode;
+                rpktR->randvalue = rpkt->randvalue;
+                rpktR->counter = rpkt->counter + 1;
+              }
+
+              if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
+                busy = TRUE;
+                dbg("debug", "[REGISTER] Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
+              }
             }
-            else
-            {
-              rpktR->routingNode = rpkt->routingNode;
-              rpktR->randvalue = rpkt->randvalue;
-              rpktR->counter = rpkt->counter + 1;
-            }
+            else {
+              dbg("debug", "[REGISTER -> QUEUE] RN buffer is busy. Sending message to queue\n");
+              msg_q[msg_q_cnt].msg_type = rpkt->msg_type;        
+              msg_q[msg_q_cnt].nodeid = rpkt->nodeid;
+              msg_q[msg_q_cnt].dest = rpkt->dest;
+              
+              msg_q[msg_q_cnt].seconds = rpkt->seconds;
+              msg_q[msg_q_cnt].minutes = rpkt->minutes;
+              msg_q[msg_q_cnt].hour = rpkt->hour;
+              msg_q[msg_q_cnt].day = rpkt->day;
+              msg_q[msg_q_cnt].month = rpkt->month;
+              msg_q[msg_q_cnt].year = rpkt->year;
 
-            if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
-              busy = TRUE;
-              dbg("debug", "[REGISTER] Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
+              msg_q[msg_q_cnt].x = rpkt->x;
+              msg_q[msg_q_cnt].y = rpkt->y;
+
+
+              // Humidity information
+              msg_q[msg_q_cnt].humidity=0;
+
+              // Temperature information
+              msg_q[msg_q_cnt].temperature=0;
+
+              // Smoke information
+              msg_q[msg_q_cnt].smoke=0;
+
+              //dbg("debug", "COUNTER: %d\n", rpkt->counter);
+              if(rpkt->counter == 0){
+                //randValue 0 e 200
+                uint8_t rv = rand()%201;
+
+                msg_q[msg_q_cnt].routingNode = TOS_NODE_ID;
+                msg_q[msg_q_cnt].randvalue = rv;
+                msg_q[msg_q_cnt].counter = rpkt->counter + 1;
+                msg_q_cnt++;
+              }
+              else
+              {
+                msg_q[msg_q_cnt].routingNode = rpkt->routingNode;
+                msg_q[msg_q_cnt].randvalue = rpkt->randvalue;
+                msg_q[msg_q_cnt].counter = rpkt->counter + 1;
+                msg_q_cnt++;
+              }          
+            }
+          } else if(dateMsg > lastDate[rpkt->nodeid]){
+              lastTimeStamp[rpkt->nodeid] = timestampMsg;
+              lastDate[rpkt->nodeid] = dateMsg;
+
+              if(!busy){
+
+                radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
+                dbg("debug", "[REGISTER -RN] RN: %d\n", TOS_NODE_ID);
+                rpktR->msg_type = rpkt->msg_type;        
+                rpktR->nodeid = rpkt->nodeid;
+                rpktR->dest = rpkt->dest;
+                
+                rpktR->seconds = rpkt->seconds;
+                rpktR->minutes = rpkt->minutes;
+                rpktR->hour = rpkt->hour;
+                rpktR->day = rpkt->day;
+                rpktR->month = rpkt->month;
+                rpktR->year = rpkt->year;
+
+                rpktR->x = rpkt->x;
+                rpktR->y = rpkt->y;
+
+                //dbg("debug", "COUNTER: %d\n", rpkt->counter);
+                if(rpkt->counter == 0){
+                  //randValue 0 e 200
+                  uint8_t rv = rand()%201;
+
+                  rpktR->routingNode = TOS_NODE_ID;
+                  rpktR->randvalue = rv;
+                  rpktR->counter = rpkt->counter + 1;
+                }
+                else
+                {
+                  rpktR->routingNode = rpkt->routingNode;
+                  rpktR->randvalue = rpkt->randvalue;
+                  rpktR->counter = rpkt->counter + 1;
+                }
+
+                if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
+                  busy = TRUE;
+                  dbg("debug", "[REGISTER] Message Sent from %d to %d (init in sensorNode %d).\n", TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
+                }
+              }
+              else {
+                dbg("debug", "[REGISTER -> QUEUE] RN buffer is busy. Sending message to queue\n");
+                msg_q[msg_q_cnt].msg_type = rpkt->msg_type;        
+                msg_q[msg_q_cnt].nodeid = rpkt->nodeid;
+                msg_q[msg_q_cnt].dest = rpkt->dest;
+                
+                msg_q[msg_q_cnt].seconds = rpkt->seconds;
+                msg_q[msg_q_cnt].minutes = rpkt->minutes;
+                msg_q[msg_q_cnt].hour = rpkt->hour;
+                msg_q[msg_q_cnt].day = rpkt->day;
+                msg_q[msg_q_cnt].month = rpkt->month;
+                msg_q[msg_q_cnt].year = rpkt->year;
+
+                msg_q[msg_q_cnt].x = rpkt->x;
+                msg_q[msg_q_cnt].y = rpkt->y;
+
+
+                // Humidity information
+                msg_q[msg_q_cnt].humidity=0;
+
+                // Temperature information
+                msg_q[msg_q_cnt].temperature=0;
+
+                // Smoke information
+                msg_q[msg_q_cnt].smoke=0;
+
+                //dbg("debug", "COUNTER: %d\n", rpkt->counter);
+                if(rpkt->counter == 0){
+                  //randValue 0 e 200
+                  uint8_t rv = rand()%201;
+
+                  msg_q[msg_q_cnt].routingNode = TOS_NODE_ID;
+                  msg_q[msg_q_cnt].randvalue = rv;
+                  msg_q[msg_q_cnt].counter = rpkt->counter + 1;
+                  msg_q_cnt++;
+                }
+                else
+                {
+                  msg_q[msg_q_cnt].routingNode = rpkt->routingNode;
+                  msg_q[msg_q_cnt].randvalue = rpkt->randvalue;
+                  msg_q[msg_q_cnt].counter = rpkt->counter + 1;
+                  msg_q_cnt++;
+                }          
+              }
             }
           }
-          else {
-            dbg("debug", "[REGISTER -> QUEUE] RN buffer is busy. Sending message to queue\n");
-            msg_q[msg_q_cnt].msg_type = rpkt->msg_type;        
-            msg_q[msg_q_cnt].nodeid = rpkt->nodeid;
-            msg_q[msg_q_cnt].dest = rpkt->dest;
-            
-            msg_q[msg_q_cnt].seconds = rpkt->seconds;
-            msg_q[msg_q_cnt].minutes = rpkt->minutes;
-            msg_q[msg_q_cnt].hour = rpkt->hour;
-            msg_q[msg_q_cnt].day = rpkt->day;
-            msg_q[msg_q_cnt].month = rpkt->month;
-            msg_q[msg_q_cnt].year = rpkt->year;
-
-            msg_q[msg_q_cnt].x = rpkt->x;
-            msg_q[msg_q_cnt].y = rpkt->y;
-
-
-            // Humidity information
-            msg_q[msg_q_cnt].humidity=0;
-
-            // Temperature information
-            msg_q[msg_q_cnt].temperature=0;
-
-            // Smoke information
-            msg_q[msg_q_cnt].smoke=0;
-
-            //dbg("debug", "COUNTER: %d\n", rpkt->counter);
-            if(rpkt->counter == 0){
-              //randValue 0 e 200
-              uint8_t rv = rand()%201;
-
-              msg_q[msg_q_cnt].routingNode = TOS_NODE_ID;
-              msg_q[msg_q_cnt].randvalue = rv;
-              msg_q[msg_q_cnt].counter = rpkt->counter + 1;
-              msg_q_cnt++;
-            }
-            else
-            {
-              msg_q[msg_q_cnt].routingNode = rpkt->routingNode;
-              msg_q[msg_q_cnt].randvalue = rpkt->randvalue;
-              msg_q[msg_q_cnt].counter = rpkt->counter + 1;
-              msg_q_cnt++;
-            }          
-          }
-        } 
+        }
       } //closes
       else if(rpkt->msg_type == MEASURES){
 
