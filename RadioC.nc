@@ -672,7 +672,6 @@
                 }          
               }
             }
-          }
         }
       } //closes
       else if(rpkt->msg_type == MEASURES){
