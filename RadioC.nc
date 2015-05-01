@@ -8,8 +8,8 @@
     interface Boot;
     interface Leds;
     interface Receive;
-    interface Timer<TMilli> as SensorsTimer;
-    interface Timer<TMilli> as SmokeTimer;
+    interface Timer<TMilli> as Timer1;
+    interface Timer<TMilli> as Timer0;
     interface Packet;
     interface AMPacket;
     interface AMSend;
@@ -96,10 +96,10 @@
           busy = TRUE;
           dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> Register message sent with coordinates x: %d and y: %d.\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year, rpkt->x, rpkt->y);
         }
-        call SmokeTimer.startPeriodic(50000);
+        call Timer0.startPeriodic(T_REGISTER_CHECK);
       }
       else if(0 == TOS_NODE_ID){
-        call SmokeTimer.startPeriodic(T_ALIVE_MEASURE);
+        call Timer0.startPeriodic(T_ALIVE_MEASURE);
       }
 
     }
@@ -111,10 +111,10 @@
   event void AMControl.stopDone(error_t err) {
   }
 
-  event void SmokeTimer.fired() {
+  event void Timer0.fired() {
     if(TOS_NODE_ID >= 100){
       if(registered){
-        if (!busy && (call smokeDetector.getSmoke() || smokeDetected)) {
+        if (!busy && (call smokeDetector.getSmoke() || smokeDetected) && !smokeMalfunction) {
           radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
           rpkt->nodeid = TOS_NODE_ID;
           rpkt->dest = 0;
@@ -137,7 +137,7 @@
 
           if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
             busy = TRUE;
-            dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> SMOKE DETECTED!!!\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
+            dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> SMOKE DETECTED!!! smokeMalfunction: %d\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year, smokeMalfunction);
 
           }
         }
@@ -146,7 +146,7 @@
       {
         if(!busy){
           radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-          call SmokeTimer.stop();
+          call Timer0.stop();
           rpkt->msg_type = REGISTER;        
           rpkt->nodeid = TOS_NODE_ID;
           rpkt->dest = 0;
@@ -171,7 +171,7 @@
             dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> Register message sent with coordinates x: %d and y: %d.\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year, rpkt->x, rpkt->y);
           }
         }
-        call SmokeTimer.startPeriodic(T_SMOKE_MEASURE);
+        call Timer0.startPeriodic(T_REGISTER_CHECK);
       }
     } 
     else if (0 == TOS_NODE_ID){
@@ -210,7 +210,7 @@
     }
   }
  
-  event void SensorsTimer.fired() {
+  event void Timer1.fired() {
     if (!busy) {
   		radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
    		rpkt->nodeid = TOS_NODE_ID;
@@ -348,11 +348,6 @@
               msg_q[msg_q_cnt].nodeid = rpkt->nodeid;
               msg_q[msg_q_cnt].dest = rpkt->dest;
 
-              //REGISTER vars
-              msg_q[msg_q_cnt].counter=0;
-              msg_q[msg_q_cnt].randvalue=0;
-              msg_q[msg_q_cnt].routingNode=0;
-
               // Timestamp
               time(&rawtime);
               info = gmtime(&rawtime);
@@ -362,19 +357,6 @@
               msg_q[msg_q_cnt].day = info->tm_mday;
               msg_q[msg_q_cnt].month = info->tm_mon;
               msg_q[msg_q_cnt].year = info->tm_year+1900;
-
-              // GPS coordinates
-              msg_q[msg_q_cnt].x=0;
-              msg_q[msg_q_cnt].y=0;
-
-              // Humidity information
-              msg_q[msg_q_cnt].humidity=0;
-
-              // Temperature information
-              msg_q[msg_q_cnt].temperature=0;
-
-              // Smoke information
-              msg_q[msg_q_cnt].smoke=0;
 
               msg_q_cnt++;
             }
@@ -471,11 +453,6 @@
                   msg_q[msg_q_cnt].dest = rpkt->dest;
                   msg_q[msg_q_cnt].msg_type = rpkt->msg_type;
 
-                    //REGISTER vars
-                  msg_q[msg_q_cnt].counter=0;
-                  msg_q[msg_q_cnt].randvalue=0;
-                  msg_q[msg_q_cnt].routingNode=0;
-
                   // Timestamp
                   time(&rawtime);
                   info = gmtime(&rawtime);
@@ -485,19 +462,6 @@
                   msg_q[msg_q_cnt].day = info->tm_mday;
                   msg_q[msg_q_cnt].month = info->tm_mon;
                   msg_q[msg_q_cnt].year = info->tm_year+1900;
-
-                  // GPS coordinates
-                  msg_q[msg_q_cnt].x=0;
-                  msg_q[msg_q_cnt].y=0;
-
-                  // Humidity information
-                  msg_q[msg_q_cnt].humidity=0;
-
-                  // Temperature information
-                  msg_q[msg_q_cnt].temperature=0;
-
-                  // Smoke information
-                  msg_q[msg_q_cnt].smoke=0;
 
                   msg_q_cnt++;
                   dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [ASSIGN_SNODE -> QUEUE] Radio buffer busy. Moving message to queue.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
@@ -529,11 +493,6 @@
                 msg_q[msg_q_cnt].dest = rpkt->dest;
                 msg_q[msg_q_cnt].msg_type = rpkt->msg_type;
 
-                  //REGISTER vars
-                msg_q[msg_q_cnt].counter=0;
-                msg_q[msg_q_cnt].randvalue=0;
-                msg_q[msg_q_cnt].routingNode=0;
-
                 // Timestamp
                 time(&rawtime);
                 info = gmtime(&rawtime);
@@ -543,19 +502,6 @@
                 msg_q[msg_q_cnt].day = info->tm_mday;
                 msg_q[msg_q_cnt].month = info->tm_mon;
                 msg_q[msg_q_cnt].year = info->tm_year+1900;
-
-                // GPS coordinates
-                msg_q[msg_q_cnt].x=0;
-                msg_q[msg_q_cnt].y=0;
-
-                // Humidity information
-                msg_q[msg_q_cnt].humidity=0;
-
-                // Temperature information
-                msg_q[msg_q_cnt].temperature=0;
-
-                // Smoke information
-                msg_q[msg_q_cnt].smoke=0;
 
                 msg_q_cnt++;
                 dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [ASSIGN_SNODE -> QUEUE] Radio buffer busy. Moving message to queue.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
@@ -572,16 +518,16 @@
             lastAckTimeStamp = timestampMsg;
             lastAckDate = dateMsg;
 
-            dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [ASSIGN_SNODE -> SENSOR NODE] Assign ack. Starting timers.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
+            dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [ASSIGN_SNODE -> SENSOR NODE] Assign ack. Starting timers.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->routingNode);
             registered = TRUE;
-            call SmokeTimer.startPeriodic(T_SMOKE_MEASURE);
-            call SensorsTimer.startPeriodic(T_MEASURE);
+            call Timer0.startPeriodic(T_SMOKE_MEASURE);
+            call Timer1.startPeriodic(T_MEASURE);
           }
         }
       }
       else if(rpkt->msg_type == SIMULATE_FIRE){
         smokeDetected = TRUE;
-        if (!busy) {
+        if (!busy && !smokeMalfunction) {
           radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
           rpktR->nodeid = TOS_NODE_ID;
           rpktR->dest = 0;
@@ -599,7 +545,7 @@
 
           if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
             busy = TRUE;
-            dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> SMOKE DETECTED!!!\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
+            dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> SMOKE DETECTED!!! smokeMalfunction: %d\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year, smokeMalfunction);
           }
         }
       } 
@@ -623,7 +569,7 @@
         dbg("debug", "HUMIDITY MODULE MALFUNCTION\n");
         humidityMalfunction = TRUE;
       }      
-      else if(rpkt->msg_type == SIMULATE_HUMIDITY_MALFUNCTION){
+      else if(rpkt->msg_type == RESTORE_MALFUNCTION){
         dbg("debug", "MODULES FUNCTION RESTORED TO NORMAL\n");
         smokeMalfunction = FALSE;
         gpsMalfunction = FALSE;
@@ -726,11 +672,6 @@
                 msg_q[msg_q_cnt].nodeid = rpkt->nodeid;
                 msg_q[msg_q_cnt].dest = registeredNodes[rpkt->nodeid];
 
-                //REGISTER vars
-                msg_q[msg_q_cnt].counter=0;
-                msg_q[msg_q_cnt].randvalue=0;
-                msg_q[msg_q_cnt].routingNode=0;
-
                 // Timestamp
                 time(&rawtime);
                 info = gmtime(&rawtime);
@@ -740,19 +681,6 @@
                 msg_q[msg_q_cnt].day = info->tm_mday;
                 msg_q[msg_q_cnt].month = info->tm_mon;
                 msg_q[msg_q_cnt].year = info->tm_year+1900;
-
-                // GPS coordinates
-                msg_q[msg_q_cnt].x=0;
-                msg_q[msg_q_cnt].y=0;
-
-                // Humidity information
-                msg_q[msg_q_cnt].humidity=0;
-
-                // Temperature information
-                msg_q[msg_q_cnt].temperature=0;
-
-                // Smoke information
-                msg_q[msg_q_cnt].smoke=0;
 
                 msg_q_cnt++;
               }
@@ -790,11 +718,6 @@
               msg_q[msg_q_cnt].nodeid = rpkt->nodeid;
               msg_q[msg_q_cnt].dest = rpkt->routingNode;
 
-              //REGISTER vars
-              msg_q[msg_q_cnt].counter=0;
-              msg_q[msg_q_cnt].randvalue=0;
-              msg_q[msg_q_cnt].routingNode=0;
-
               // Timestamp
               time(&rawtime);
               info = gmtime(&rawtime);
@@ -804,19 +727,6 @@
               msg_q[msg_q_cnt].day = info->tm_mday;
               msg_q[msg_q_cnt].month = info->tm_mon;
               msg_q[msg_q_cnt].year = info->tm_year+1900;
-
-              // GPS coordinates
-              msg_q[msg_q_cnt].x=0;
-              msg_q[msg_q_cnt].y=0;
-
-              // Humidity information
-              msg_q[msg_q_cnt].humidity=0;
-
-              // Temperature information
-              msg_q[msg_q_cnt].temperature=0;
-
-              // Smoke information
-              msg_q[msg_q_cnt].smoke=0;
 
               msg_q_cnt++;
             }
@@ -848,15 +758,6 @@
 
               rpktR->x = rpkt->x;
               rpktR->y = rpkt->y;
-
-              // Humidity information
-              msg_q[msg_q_cnt].humidity=0;
-
-              // Temperature information
-              msg_q[msg_q_cnt].temperature=0;
-
-              // Smoke information
-              msg_q[msg_q_cnt].smoke=0;
 
               if(rpkt->counter == 0){
                 //randValue 0 e 200
@@ -893,16 +794,6 @@
 
               msg_q[msg_q_cnt].x = rpkt->x;
               msg_q[msg_q_cnt].y = rpkt->y;
-
-
-              // Humidity information
-              msg_q[msg_q_cnt].humidity=0;
-
-              // Temperature information
-              msg_q[msg_q_cnt].temperature=0;
-
-              // Smoke information
-              msg_q[msg_q_cnt].smoke=0;
 
               if(rpkt->counter == 0){
                 //randValue 0 e 200
@@ -970,6 +861,7 @@
 
                 rpktR->humidity = rpkt->humidity;
                 rpktR->temperature = rpkt->temperature;
+                rpktR->smoke = rpkt->smoke;
 
                 if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
                   busy = TRUE;

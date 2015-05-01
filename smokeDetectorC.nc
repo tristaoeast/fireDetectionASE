@@ -15,7 +15,7 @@ implementation {
     }
 	
 	command bool smokeDetector.getSmoke() {
-		rv = (rand() % 10);
+		rv = (rand() % 100);
 		if(rv == 1)
 			return TRUE;
 		else

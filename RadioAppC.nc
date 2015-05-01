@@ -7,8 +7,8 @@
    //components MainC;
    components LedsC;
    components MainC, RadioC as App;
-   components new TimerMilliC() as SensorsTimer;
-   components new TimerMilliC() as SmokeTimer;
+   components new TimerMilliC() as Timer1;
+   components new TimerMilliC() as Timer0;
    components ActiveMessageC;
    components new AMSenderC(AM_RADIO_MSG);
    components new AMReceiverC(AM_RADIO_MSG);
@@ -19,8 +19,8 @@
  
    App.Boot -> MainC;
    App.Leds -> LedsC;
-   App.SensorsTimer -> SensorsTimer;
-   App.SmokeTimer -> SmokeTimer;
+   App.Timer1 -> Timer1;
+   App.Timer0 -> Timer0;
    App.Packet -> AMSenderC;
    App.AMPacket -> AMSenderC;
    App.AMSend -> AMSenderC;
