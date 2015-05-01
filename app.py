@@ -16,7 +16,7 @@ class Server():
     def runServer(self):
         self.tossim = Tossim([])
         self.radio = self.tossim.radio()
-        self.topo = "topo2.txt"
+        self.topo = "topo3.txt"
         self.noise = "meyer-heavy-trimmed.txt"
         self.debug = open("debug.txt", "w")
         self.log = open("log.txt", "w")
@@ -45,8 +45,8 @@ class Server():
                 # print " ", s[0], " ", s[1], " ", s[2]
                 self.debug.write(s[0] + " " + s[1] + " " + s[2] + "\n")
                 radio.add(int(s[0]), int(s[1]), float(s[2]))
-                #self.debug.write(s[1] + " " + s[0] + " " + s[2] + "\n")
-                #radio.add(int(s[1]), int(s[0]), float(s[2]))
+                self.debug.write(s[1] + " " + s[0] + " " + s[2] + "\n")
+                radio.add(int(s[1]), int(s[0]), float(s[2]))
                 # Verify node type and add to respective set
                 if 0 != int(s[0]):
                     if int(s[0]) < 100:
@@ -142,7 +142,7 @@ class Server():
         options = {
             1: self.simulateFire,
             2: self.simulateRoutingNodeMalfunction,
-            3: self.simulateSensorNodeComponentMalfunction,
+            3: self.simulateSensorNodeModuleMalfunction,
             4: self.checkLogFile,
             5: self.putOutFire,
             6: self.checkDebugFile
@@ -154,7 +154,7 @@ class Server():
 
         while(1):
             self.printMenu()
-            iTemp = raw_input("Select a Sensor Node to trigger the fire: ")
+            iTemp = raw_input("Select a Sensor Node to trigger the fire [look at topo]: ")
             print ""
             try:
                 i = int(iTemp)
@@ -183,8 +183,63 @@ class Server():
     def simulateRoutingNodeMalfunction(self):
         print "Simulating Routing Node malfuntion"
 
-    def simulateSensorNodeComponentMalfunction(self):
+    def simulateSensorNodeModuleMalfunction(self):
         print "Simulating malfuntion of module in Sensor Node"
+        t = self.tossim
+
+        while(1):
+            iTemp = raw_input("Select a Sensor Nodeto simulate module malfunction [look at topo]: ")
+            print ""
+            try:
+                i = int(iTemp)
+            except ValueError:
+                print "ERROR: Invalid input type."
+                print ""
+                continue
+            if not(i in self.sensors):
+                print "ERROR: Invalid sensor node selected"
+                print ""
+                continue
+            while(1):
+                print "[1] Temperature Sensor"
+                print "[2] Humidity Sensor"
+                print "[3] Smoke Detector"
+                print "[4] GPS"
+                print ""
+                print "[0] Cancel"
+                iiTemp = raw_input("Select an option [0-4]: ")
+                print ""
+                try:
+                    ii = int(iiTemp)
+                except ValueError:
+                    print "ERROR: Invalid input type."
+                    print ""
+                    continue
+                if(ii < 0 or ii > 4):
+                    print "ERROR: Invalid option selected"
+                    print ""
+                    continue
+                break
+            break
+
+        if not (0 == ii):
+            #inject packet to simulate fire
+            msg = RadioMsg()
+            if(1 == ii):
+                msg.set_msg_type(9)
+            elif(2 == ii):
+                msg.set_msg_type(8)
+            elif(3 == ii):
+                msg.set_msg_type(6)
+            elif(4 == ii):
+                msg.set_msg_type(7)
+            msg.set_dest(i)
+            pkt = t.newPacket()
+            pkt.setData(msg.data)
+            pkt.setType(msg.get_amType())
+            pkt.setDestination(i)
+            pkt.setSource(0)
+            pkt.deliverNow(i)
 
     def checkLogFile(self):
         shutil.copy2("log.txt", "logTemp.txt")

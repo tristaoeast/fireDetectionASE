@@ -7,6 +7,11 @@
 #define SIMULATE_FIRE 3
 #define PUT_OUT_FIRE 4
 #define ASSIGN_SNODE 5
+#define SIMULATE_SMOKE_MALFUNCTION 6
+#define SIMULATE_GPS_MALFUNCTION 7
+#define SIMULATE_HUMIDITY_MALFUNCTION 8
+#define SIMULATE_TEMPERATURE_MALFUNCTION 9
+#define RESTORE_MALFUNCTION 10
 
  
 enum {
@@ -35,17 +40,17 @@ typedef nx_struct radio_msg {
   nx_uint8_t year;
 
   // GPS coordinates
-  nx_uint16_t x;
-  nx_uint16_t y;
+  nx_int16_t x;
+  nx_int16_t y;
 
   // Humidity information
-  nx_uint8_t humidity;
+  nx_int8_t humidity;
 
   // Temperature information
-  nx_uint8_t temperature;
+  nx_int8_t temperature;
 
   // Smoke information
-  nx_uint8_t smoke;
+  nx_int8_t smoke;
 
 
 } radio_msg;

@@ -23,6 +23,12 @@
  implementation {
   bool busy = FALSE;
   bool smokeDetected = FALSE;
+
+  bool smokeMalfunction = FALSE;
+  bool gpsMalfunction = FALSE;
+  bool temperatureMalfunction = FALSE;
+  bool humidityMalfunction = FALSE;
+
   message_t pkt;
   message_t pktQ;
   position_t p;
@@ -186,8 +192,36 @@
    		rpkt->nodeid = TOS_NODE_ID;
       rpkt->dest = 0;
       rpkt->msg_type = MEASURES;
-      rpkt->humidity = call humidityDetector.getHumidity();
-      rpkt->temperature = call temperatureDetector.getTemperature();
+      if(gpsMalfunction){
+        rpkt->x = -1;
+        rpkt->y = -1;
+      }
+      else {
+        position_t pt = call gps.getPosition();
+        rpkt->x = pt.x;
+        rpkt->y = pt.y;
+      }
+      if(humidityMalfunction) {
+        rpkt->humidity = -1;
+      }
+      else {
+        rpkt->humidity = call humidityDetector.getHumidity();
+      }      
+      if(temperatureMalfunction) {
+        rpkt->temperature = -1;
+      }
+      else {
+        rpkt->temperature = call temperatureDetector.getTemperature();
+      }      
+      if(smokeMalfunction) {
+        rpkt->smoke = -1;
+      }
+      else if(smokeDetected) {
+        rpkt->smoke = 1;
+      } 
+      else {
+        rpkt->smoke = 0;
+      }
       rpkt->counter = 0;
 
       time(&rawtime);
@@ -213,7 +247,7 @@
       if(!busy && msg_q_cnt > 0) {
         int ind = msg_q_cnt - 1;
         radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-        //dbg("debug", "[SEND DONE -> QUEUE] Number of messages in queue: %d\n", msg_q_cnt);
+        dbg("debug", "[SEND DONE -> QUEUE] Number of messages in queue: %d\n", msg_q_cnt);
         //dbg("debug", "[SEND_DONE] 1\n");
         rpkt->msg_type = msg_q[ind].msg_type;
         //dbg("debug", "[SEND_DONE] 2\n");
@@ -388,6 +422,29 @@
         dbg("debug", "THE FIREMEN CAME AND PUT OUT THE FIRE!!!!!!!!!!!!\n");
         smokeDetected = FALSE;
       }
+      else if(rpkt->msg_type == SIMULATE_SMOKE_MALFUNCTION){
+        dbg("debug", "SMOKE MODULE MALFUNCTION\n");
+        smokeMalfunction = TRUE;
+      }      
+      else if(rpkt->msg_type == SIMULATE_GPS_MALFUNCTION){
+        dbg("debug", "GPS MODULE MALFUNCTION\n");
+        gpsMalfunction = TRUE;
+      }
+      else if(rpkt->msg_type == SIMULATE_TEMPERATURE_MALFUNCTION){
+        dbg("debug", "TEMPERATURE MODULE MALFUNCTION\n");
+        temperatureMalfunction = TRUE;
+      }      
+      else if(rpkt->msg_type == SIMULATE_HUMIDITY_MALFUNCTION){
+        dbg("debug", "HUMIDITY MODULE MALFUNCTION\n");
+        humidityMalfunction = TRUE;
+      }      
+      else if(rpkt->msg_type == SIMULATE_HUMIDITY_MALFUNCTION){
+        dbg("debug", "MODULES FUNCTION RESTORED TO NORMAL\n");
+        smokeMalfunction = FALSE;
+        gpsMalfunction = FALSE;
+        humidityMalfunction = FALSE;
+        temperatureMalfunction = FALSE;
+      }
       else if(rpkt->msg_type == SMOKE){
         if(TOS_NODE_ID >=0 && TOS_NODE_ID < 100){
           //verifica se o timestamp e mais recente que o da ultima mensagem recebida
@@ -399,8 +456,8 @@
             lastDate[rpkt->nodeid] = dateMsg;
             if(TOS_NODE_ID == 0)
             {
-              dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SMOKE] Sensor Node %d detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->smoke);
-              dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->smoke);
+              dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SMOKE] Sensor Node %d located at x: %d and y: %d detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->smoke);
+              dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d located at x: %d and y: %d detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->smoke);
             } 
             else
             {
@@ -437,8 +494,8 @@
               //dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
               if(TOS_NODE_ID == 0)
               {
-                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SMOKE] Sensor Node detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->smoke);
-                dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->smoke);
+                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SMOKE] Sensor Node located at x: %d and y: %d detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->smoke);
+                dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d located at x: %d and y: %d detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->smoke);
               }
               else
               {
@@ -735,8 +792,8 @@
             //dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
             if(TOS_NODE_ID == 0)
             {
-              dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [MEASURE] Sensor Node %d measure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
-              dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d measure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
+              dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [MEASURE] Sensor Node %d located at x: %d and y: %d measured humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->humidity, rpkt->temperature);
+              dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d located at x: %d and y: %d measured humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->humidity, rpkt->temperature);
             } 
             else
             {
@@ -783,8 +840,8 @@
               //dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
               if(TOS_NODE_ID == 0)
               {
-                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [MEASURE] Sensor Node %d measure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
-                dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d measure with humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->humidity, rpkt->temperature);
+                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [MEASURE] Sensor Node %d located at x: %d and y: %d measured humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->humidity, rpkt->temperature);
+                dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d located at x: %d and y: %d measured humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->humidity, rpkt->temperature);
               }
               else
               {
