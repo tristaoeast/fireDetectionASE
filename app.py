@@ -16,7 +16,7 @@ class Server():
     def runServer(self):
         self.tossim = Tossim([])
         self.radio = self.tossim.radio()
-        self.topo = "topo.txt"
+        self.topo = "topo3.txt"
         self.noise = "meyer-heavy-trimmed.txt"
         self.debug = open("debug.txt", "w")
         self.log = open("log.txt", "w")
@@ -181,7 +181,26 @@ class Server():
 
 
     def simulateRoutingNodeMalfunction(self):
-        print "Simulating Routing Node malfuntion"
+        t = self.tossim
+
+        while(1):
+            iTemp = raw_input("Select a Routing Node simulate malfunction [look at topo]: ")
+            print ""
+            try:
+                i = int(iTemp)
+            except ValueError:
+                print "ERROR: Invalid input type."
+                print ""
+                continue
+            if not(i in self.routers or 0 == i):
+                print "ERROR: Invalid sensor node selected"
+                print ""
+                continue
+            break
+
+        if not(0 == i):
+            m = t.getNode(i)
+            m.turnOff()
 
     def simulateSensorNodeModuleMalfunction(self):
         print "Simulating malfuntion of module in Sensor Node"

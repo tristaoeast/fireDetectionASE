@@ -99,7 +99,7 @@
           dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> Register message sent with coordinates x: %d and y: %d.\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year, rpkt->x, rpkt->y);
         }
         //call SensorsTimer.startPeriodic(T_MEASURE);
-        call SmokeTimer.startPeriodic(T_SMOKE_MEASURE);
+        call SmokeTimer.startPeriodic(50000);
       }
       else if(0 == TOS_NODE_ID){
         call SmokeTimer.startPeriodic(T_ALIVE_MEASURE);
@@ -126,6 +126,11 @@
           rpkt->dest = 0;
           rpkt->msg_type = SMOKE;
           rpkt->smoke = 1;
+          rpkt->counter = 0;
+
+          pos = call gps.getPosition();
+          rpkt->x = pos.x;
+          rpkt->y = pos.y;
 
           time(&rawtime);
           info = gmtime(&rawtime);
@@ -142,7 +147,9 @@
 
           }
         }
-      } else {
+      } 
+      else 
+      {
         if(!busy){
           radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
           call SmokeTimer.stop();
@@ -179,13 +186,16 @@
       time(&rawtime);
       info = gmtime(&rawtime);
       ts = (info->tm_hour+BST)*10000 + info->tm_min*100 + info->tm_sec;
-      for(i = 100; i < sensorNodeCounter; i++){
-        int etime = ts - lastMeasureTS[i];
-        if(etime < -500 || etime > 500){
-          //TODO: SEND A RE REGISTER MESSAGE
+
+      for(i = 100; i < sensorNodeCounter+100; i++){
+        int lts = lastTimeStamp[i];
+        int etime = ts - lts;
+        dbg("debug", "++++++ ETIME: %d ++++++\n", etime);
+        if((etime < -50 || etime > 50) && (lts != 0)) {
+          //TODO: SEND A RE REGISTER MESSAGE - DONE
           if(!busy){
             radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-            call SmokeTimer.stop();
+            //call SmokeTimer.stop();
             rpkt->msg_type = RE_REGISTER;        
             rpkt->dest = i;
             
@@ -331,14 +341,123 @@
       radio_msg* rpkt = (radio_msg*)payload;
       //dbg("debug", "[MSG RECEIVED] msg_type: %d\n", rpkt->msg_type);
 
-      if(rpkt->msg_type == RE_REGISTER && TOS_NODE_ID == rpkt->dest){
-        //verifica se o timestamp e mais recente que o da ultima mensagem recebida
-        int timestampMsg = rpkt->hour*10000 + rpkt->minutes*100 + rpkt->seconds;
-        int dateMsg = rpkt->year*10000 + rpkt->month*100 + rpkt->day;
-        //tempo (horas) recebido e maior que o da ultima mensagem recebida
-        if((timestampMsg > lastAckTimeStamp) || (dateMsg > lastAckDate)) {
-          registered = FALSE;
-          ("debug", "<%2d:%02d:%02d %02d/%02d/%d> [RE_REGISTER] \n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
+      if(rpkt->msg_type == UN_ASSIGN_SNODE){
+        if(rpkt->dest == TOS_NODE_ID){
+          int i;
+          int id = rpkt->nodeid;
+          for(i=0; i<100; i++){
+            if(mySensorNodes[i] == id){
+              mySensorNodes[i] = 0;
+              break;
+            }
+          }
+        } 
+        else if(TOS_NODE_ID <= 99 && TOS_NODE_ID >= 1) 
+        {
+          //verifica se o timestamp e mais recente que o da ultima mensagem recebida
+          int timestampMsg = rpkt->hour*10000 + rpkt->minutes*100 + rpkt->seconds;
+          int dateMsg = rpkt->year*10000 + rpkt->month*100 + rpkt->day;
+          //tempo (horas) recebido e maior que o da ultima mensagem recebida
+          if((timestampMsg > lastAssignTimeStamp[rpkt->nodeid]) || (dateMsg > lastAssignDate[rpkt->nodeid])) {
+            lastAssignTimeStamp[rpkt->nodeid] = timestampMsg;
+            lastAssignDate[rpkt->nodeid] = dateMsg;
+            if(!busy){
+              radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
+              rpktR->msg_type = UN_ASSIGN_SNODE;        
+              rpktR->nodeid = rpkt->nodeid;
+              rpktR->dest = rpkt->dest;
+ 
+              time(&rawtime);
+              info = gmtime(&rawtime);
+              rpktR->seconds = info->tm_sec;
+              rpktR->minutes = info->tm_min;
+              rpktR->hour = info->tm_hour+BST;
+              rpktR->day = info->tm_mday;
+              rpktR->month = info->tm_mon;
+              rpktR->year = info->tm_year+1900;
+  
+              if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
+                busy = TRUE;
+                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [REGISTER -> UN_ASSIGN_SNODE] Message Sent from %d to %d (init in sensorNode %d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, TOS_NODE_ID, registeredNodes[rpkt->nodeid], rpktR->nodeid);
+              }
+            }
+            else {
+              dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [REGISTER -> UN_ASSIGN_SNODE -> QUEUE] RN buffer is busy. Sending message destined to %d to queue\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, registeredNodes[rpkt->nodeid]);
+              msg_q[msg_q_cnt].msg_type = UN_ASSIGN_SNODE;        
+              msg_q[msg_q_cnt].nodeid = rpkt->nodeid;
+              msg_q[msg_q_cnt].dest = rpkt->dest;
+
+              //REGISTER vars
+              msg_q[msg_q_cnt].counter=0;
+              msg_q[msg_q_cnt].randvalue=0;
+              msg_q[msg_q_cnt].routingNode=0;
+
+              // Timestamp
+              time(&rawtime);
+              info = gmtime(&rawtime);
+              msg_q[msg_q_cnt].seconds = info->tm_sec;
+              msg_q[msg_q_cnt].minutes = info->tm_min;
+              msg_q[msg_q_cnt].hour = info->tm_hour+BST;
+              msg_q[msg_q_cnt].day = info->tm_mday;
+              msg_q[msg_q_cnt].month = info->tm_mon;
+              msg_q[msg_q_cnt].year = info->tm_year+1900;
+
+              // GPS coordinates
+              msg_q[msg_q_cnt].x=0;
+              msg_q[msg_q_cnt].y=0;
+
+              // Humidity information
+              msg_q[msg_q_cnt].humidity=0;
+
+              // Temperature information
+              msg_q[msg_q_cnt].temperature=0;
+
+              // Smoke information
+              msg_q[msg_q_cnt].smoke=0;
+
+              msg_q_cnt++;
+            }
+          }
+        }
+      }
+      else if(rpkt->msg_type == RE_REGISTER) {
+        if(TOS_NODE_ID == rpkt->dest){
+          //verifica se o timestamp e mais recente que o da ultima mensagem recebida
+          int timestampMsg = rpkt->hour*10000 + rpkt->minutes*100 + rpkt->seconds;
+          int dateMsg = rpkt->year*10000 + rpkt->month*100 + rpkt->day;
+          //tempo (horas) recebido e maior que o da ultima mensagem recebida
+          if((timestampMsg > lastAckTimeStamp) || (dateMsg > lastAckDate)) {
+            registered = FALSE;
+            ("debug", "<%2d:%02d:%02d %02d/%02d/%d> [RE_REGISTER] \n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
+          }
+        } 
+        else if(TOS_NODE_ID <= 99 && TOS_NODE_ID >= 1)
+        {
+          //verifica se o timestamp e mais recente que o da ultima mensagem recebida
+          int timestampMsg = rpkt->hour*10000 + rpkt->minutes*100 + rpkt->seconds;
+          int dateMsg = rpkt->year*10000 + rpkt->month*100 + rpkt->day;
+          //tempo (horas) recebido e maior que o da ultima mensagem recebida
+          if((timestampMsg > lastAssignTimeStamp[rpkt->nodeid]) || (dateMsg > lastAssignDate[rpkt->nodeid])) {
+            lastAssignTimeStamp[rpkt->nodeid] = timestampMsg;
+            lastAssignDate[rpkt->nodeid] = dateMsg;
+            if (!busy) {
+              radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
+              rpktR->dest = rpkt->dest;
+              rpktR->msg_type = rpkt->msg_type;
+
+              rpktR->seconds = rpkt->seconds;
+              rpktR->minutes = rpkt->minutes;
+              rpktR->hour = rpkt->hour;
+              rpktR->day = rpkt->day;
+              rpktR->month = rpkt->month;
+              rpktR->year = rpkt->year;
+              
+              if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
+                busy = TRUE;
+                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [RE_REGISTER RETRANSMITTED] Sensor Node %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->dest);
+              }
+            }
+          }
         }
       }
       else if(rpkt->msg_type == ASSIGN_SNODE){
@@ -558,7 +677,7 @@
           int timestampMsg = rpkt->hour*10000 + rpkt->minutes*100 + rpkt->seconds;
           int dateMsg = rpkt->year*10000 + rpkt->month*100 + rpkt->day;
           //tempo (horas) recebido e maior que o da ultima mensagem recebida
-          if(timestampMsg > lastTimeStamp[rpkt->nodeid]){
+          if((timestampMsg > lastTimeStamp[rpkt->nodeid]) || ((dateMsg > lastDate[rpkt->nodeid]) && (lastDate[rpkt->nodeid] != 0))) {
             lastTimeStamp[rpkt->nodeid] = timestampMsg;
             lastDate[rpkt->nodeid] = dateMsg;
             if(TOS_NODE_ID == 0)
@@ -568,12 +687,26 @@
             } 
             else
             {
-              if(!busy){
+              int i;
+              bool mine = FALSE;
+              int id = rpkt->nodeid;
+              //dbg("debug", "++++++++ COUNTER: %d ++++++++\n", rpkt->counter);
+              for(i=0; i<100; i++){
+                if(mySensorNodes[i] == id){
+                  mine = TRUE;
+                  break;
+                }
+              }
+              if(!busy && ((mine && rpkt->counter == 0) || (rpkt->counter > 0 && !mine))) {                
                 radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
 
                 rpktR->msg_type = rpkt->msg_type;        
                 rpktR->nodeid = rpkt->nodeid;
                 rpktR->dest = rpkt->dest;
+
+                rpktR->x = rpkt->x;
+                rpktR->y = rpkt->y;
+                rpktR->counter = rpkt->counter + 1;
                 
                 rpktR->seconds = rpkt->seconds;
                 rpktR->minutes = rpkt->minutes;
@@ -591,45 +724,6 @@
               }
             }
           }
-          //tempo (horas) recebido e menor que o da ultima mensagem
-          else
-          {
-            //vai ver a data, se a data recebida for maior guarda esses novos valores no log
-            if((dateMsg > lastDate[rpkt->nodeid]) && (lastDate[rpkt->nodeid] != 0)){
-              lastTimeStamp[rpkt->nodeid] = timestampMsg;
-              lastDate[rpkt->nodeid] = dateMsg;
-              //dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
-              if(TOS_NODE_ID == 0)
-              {
-                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SMOKE] Sensor Node located at x: %d and y: %d detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->smoke);
-                dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d located at x: %d and y: %d detected smoke(%d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->smoke);
-              }
-              else
-              {
-                if(!busy){
-                  radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-
-                  rpktR->msg_type = rpkt->msg_type;        
-                  rpktR->nodeid = rpkt->nodeid;
-                  rpktR->dest = rpkt->dest;
-                  
-                  rpktR->seconds = rpkt->seconds;
-                  rpktR->minutes = rpkt->minutes;
-                  rpktR->hour = rpkt->hour;
-                  rpktR->day = rpkt->day;
-                  rpktR->month = rpkt->month;
-                  rpktR->year = rpkt->year;
-
-                  rpktR->smoke = rpkt->smoke;
-
-                  if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
-                    busy = TRUE;
-                    dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SMOKE] Message Sent from %d to %d (init in sensorNode %d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
-                  }
-                }
-              }
-            }
-          }
         }
       }
       else if(rpkt->msg_type == REGISTER){
@@ -643,6 +737,69 @@
           if((timestampMsg > lastAssignTimeStamp[rpkt->nodeid]) || (dateMsg > lastAssignDate[rpkt->nodeid])) {
             lastAssignTimeStamp[rpkt->nodeid] = timestampMsg;
             lastAssignDate[rpkt->nodeid] = dateMsg;
+            if(registeredNodes[rpkt->nodeid] == 0){
+              sensorNodeCounter++;
+            } 
+            else 
+            {
+              if(!busy){
+                radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
+                rpktR->msg_type = UN_ASSIGN_SNODE;        
+                rpktR->nodeid = rpkt->nodeid;
+                rpktR->dest = registeredNodes[rpkt->nodeid];
+
+                time(&rawtime);
+                info = gmtime(&rawtime);
+                rpktR->seconds = info->tm_sec;
+                rpktR->minutes = info->tm_min;
+                rpktR->hour = info->tm_hour+BST;
+                rpktR->day = info->tm_mday;
+                rpktR->month = info->tm_mon;
+                rpktR->year = info->tm_year+1900;
+
+                if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
+                  busy = TRUE;
+                  dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [REGISTER -> UN_ASSIGN_SNODE] Unassign SN: %d from RN: %d .\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, registeredNodes[rpkt->nodeid]);
+                }
+              }
+              else {
+                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [REGISTER -> UN_ASSIGN_SNODE -> QUEUE] RN buffer is busy. Unassign SN: %d from RN: %d sent to queue\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, registeredNodes[rpkt->nodeid]);
+                msg_q[msg_q_cnt].msg_type = UN_ASSIGN_SNODE;        
+                msg_q[msg_q_cnt].nodeid = rpkt->nodeid;
+                msg_q[msg_q_cnt].dest = registeredNodes[rpkt->nodeid];
+
+                //REGISTER vars
+                msg_q[msg_q_cnt].counter=0;
+                msg_q[msg_q_cnt].randvalue=0;
+                msg_q[msg_q_cnt].routingNode=0;
+
+                // Timestamp
+                time(&rawtime);
+                info = gmtime(&rawtime);
+                msg_q[msg_q_cnt].seconds = info->tm_sec;
+                msg_q[msg_q_cnt].minutes = info->tm_min;
+                msg_q[msg_q_cnt].hour = info->tm_hour+BST;
+                msg_q[msg_q_cnt].day = info->tm_mday;
+                msg_q[msg_q_cnt].month = info->tm_mon;
+                msg_q[msg_q_cnt].year = info->tm_year+1900;
+
+                // GPS coordinates
+                msg_q[msg_q_cnt].x=0;
+                msg_q[msg_q_cnt].y=0;
+
+                // Humidity information
+                msg_q[msg_q_cnt].humidity=0;
+
+                // Temperature information
+                msg_q[msg_q_cnt].temperature=0;
+
+                // Smoke information
+                msg_q[msg_q_cnt].smoke=0;
+
+                msg_q_cnt++;
+              }
+            }
+
             registeredNodes[rpkt->nodeid] = rpkt->routingNode;
             positionXSensorNodes[rpkt->nodeid] = rpkt->x;
             positionYSensorNodes[rpkt->nodeid] = rpkt->y;
@@ -715,7 +872,7 @@
           int timestampMsg = rpkt->hour*10000 + rpkt->minutes*100 + rpkt->seconds;
           int dateMsg = rpkt->year*10000 + rpkt->month*100 + rpkt->day;
           //tempo (horas) recebido e maior que o da ultima mensagem recebida
-          if(timestampMsg > lastTimeStampRegister[rpkt->nodeid]){
+          if((timestampMsg > lastTimeStampRegister[rpkt->nodeid]) || ((dateMsg > lastDate[rpkt->nodeid]) && (lastDate[rpkt->nodeid] != 0))) {
             lastTimeStampRegister[rpkt->nodeid] = timestampMsg;
             lastDateRegister[rpkt->nodeid] = dateMsg;
             if(!busy){
@@ -735,6 +892,15 @@
 
               rpktR->x = rpkt->x;
               rpktR->y = rpkt->y;
+
+              // Humidity information
+              msg_q[msg_q_cnt].humidity=0;
+
+              // Temperature information
+              msg_q[msg_q_cnt].temperature=0;
+
+              // Smoke information
+              msg_q[msg_q_cnt].smoke=0;
 
               //dbg("debug", "COUNTER: %d\n", rpkt->counter);
               if(rpkt->counter == 0){
@@ -801,96 +967,9 @@
                 msg_q_cnt++;
               }          
             }
-          } else if((dateMsg > lastDate[rpkt->nodeid]) && (lastDate[rpkt->nodeid] != 0)){
-              lastTimeStamp[rpkt->nodeid] = timestampMsg;
-              lastDate[rpkt->nodeid] = dateMsg;
-
-              if(!busy){
-
-                radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [REGISTER -RN] RN: %d\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, TOS_NODE_ID);
-                rpktR->msg_type = rpkt->msg_type;        
-                rpktR->nodeid = rpkt->nodeid;
-                rpktR->dest = rpkt->dest;
-                
-                rpktR->seconds = rpkt->seconds;
-                rpktR->minutes = rpkt->minutes;
-                rpktR->hour = rpkt->hour;
-                rpktR->day = rpkt->day;
-                rpktR->month = rpkt->month;
-                rpktR->year = rpkt->year;
-
-                rpktR->x = rpkt->x;
-                rpktR->y = rpkt->y;
-
-                //dbg("debug", "COUNTER: %d\n", rpkt->counter);
-                if(rpkt->counter == 0){
-                  //randValue 0 e 200
-                  uint8_t rv = rand()%201;
-
-                  rpktR->routingNode = TOS_NODE_ID;
-                  rpktR->randvalue = rv;
-                  rpktR->counter = rpkt->counter + 1;
-                }
-                else
-                {
-                  rpktR->routingNode = rpkt->routingNode;
-                  rpktR->randvalue = rpkt->randvalue;
-                  rpktR->counter = rpkt->counter + 1;
-                }
-
-                if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
-                  busy = TRUE;
-                  dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [REGISTER] Message Sent from %d to %d (init in sensorNode %d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
-                }
-              }
-              else {
-                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [REGISTER -> QUEUE] RN buffer is busy. Sending message to queue\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
-                msg_q[msg_q_cnt].msg_type = rpkt->msg_type;        
-                msg_q[msg_q_cnt].nodeid = rpkt->nodeid;
-                msg_q[msg_q_cnt].dest = rpkt->dest;
-                
-                msg_q[msg_q_cnt].seconds = rpkt->seconds;
-                msg_q[msg_q_cnt].minutes = rpkt->minutes;
-                msg_q[msg_q_cnt].hour = rpkt->hour;
-                msg_q[msg_q_cnt].day = rpkt->day;
-                msg_q[msg_q_cnt].month = rpkt->month;
-                msg_q[msg_q_cnt].year = rpkt->year;
-
-                msg_q[msg_q_cnt].x = rpkt->x;
-                msg_q[msg_q_cnt].y = rpkt->y;
-
-
-                // Humidity information
-                msg_q[msg_q_cnt].humidity=0;
-
-                // Temperature information
-                msg_q[msg_q_cnt].temperature=0;
-
-                // Smoke information
-                msg_q[msg_q_cnt].smoke=0;
-
-                //dbg("debug", "COUNTER: %d\n", rpkt->counter);
-                if(rpkt->counter == 0){
-                  //randValue 0 e 200
-                  uint8_t rv = rand()%201;
-
-                  msg_q[msg_q_cnt].routingNode = TOS_NODE_ID;
-                  msg_q[msg_q_cnt].randvalue = rv;
-                  msg_q[msg_q_cnt].counter = rpkt->counter + 1;
-                  msg_q_cnt++;
-                }
-                else
-                {
-                  msg_q[msg_q_cnt].routingNode = rpkt->routingNode;
-                  msg_q[msg_q_cnt].randvalue = rpkt->randvalue;
-                  msg_q[msg_q_cnt].counter = rpkt->counter + 1;
-                  msg_q_cnt++;
-                }          
-              }
-            }
+          } 
         }
-      } //closes
+      }
       else if(rpkt->msg_type == MEASURES){
 
         if(TOS_NODE_ID >=0 && TOS_NODE_ID < 100){
@@ -898,7 +977,7 @@
           int timestampMsg = rpkt->hour*10000 + rpkt->minutes*100 + rpkt->seconds;
           int dateMsg = rpkt->year*10000 + rpkt->month*100 + rpkt->day;
           //tempo (horas) recebido e maior que o da ultima mensagem recebida
-          if(timestampMsg > lastTimeStamp[rpkt->nodeid]){
+          if((timestampMsg > lastTimeStamp[rpkt->nodeid]) || ((dateMsg > lastDate[rpkt->nodeid]) && (lastDate[rpkt->nodeid] != 0))) {
             lastTimeStamp[rpkt->nodeid] = timestampMsg;
             lastDate[rpkt->nodeid] = dateMsg;
             //dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
@@ -913,7 +992,7 @@
               int i;
               bool mine = FALSE;
               int id = rpkt->nodeid;
-              dbg("debug", "++++++++ COUNTER: %d ++++++++\n", rpkt->counter);
+              //dbg("debug", "++++++++ COUNTER: %d ++++++++\n", rpkt->counter);
               for(i=0; i<100; i++){
                 if(mySensorNodes[i] == id){
                   mine = TRUE;
@@ -948,7 +1027,7 @@
             }
           }
           //tempo (horas) recebido e menor que o da ultima mensagem
-          else
+          /*else
           {
             //vai ver a data, se a data recebida for maior guarda esses novos valores no log
             if((dateMsg > lastDate[rpkt->nodeid]) && (lastDate[rpkt->nodeid] != 0)){
@@ -961,8 +1040,18 @@
                 dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d located at x: %d and y: %d measured humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->humidity, rpkt->temperature);
               }
               else
-              {
-                if(!busy){
+              {              
+                int i;
+                bool mine = FALSE;
+                int id = rpkt->nodeid;
+                //dbg("debug", "++++++++ COUNTER: %d ++++++++\n", rpkt->counter);
+                for(i=0; i<100; i++){
+                  if(mySensorNodes[i] == id){
+                    mine = TRUE;
+                    break;
+                  }
+                }
+                if(!busy && ((mine && rpkt->counter == 0) || (rpkt->counter > 0 && !mine))) {
                   radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
 
                   rpktR->msg_type = rpkt->msg_type;        
@@ -986,33 +1075,10 @@
                 }
               }
             }
-          }
+          }*/
         }
       }
-
     }
     return msg;
-
-    //antes
-    /*
-    if (len == sizeof(radio_msg)) {
-      radio_msg* rpkt = (radio_msg*)payload;
-      dbg("debug", "Message Received from %d with random value %d and counter %d.\n", rpkt->nodeid, rpkt->randvalue, rpkt->counter);
-      if(!busy){
-        radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-          rpktR->nodeid = rpkt->nodeid;
-          rpktR->counter = rpkt->counter;
-          rpktR->randvalue = rpkt->randvalue;
-        if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
-          busy = TRUE;
-          dbg("debug", "Message Sent from %d with counter %d.\n", TOS_NODE_ID, rpktR->counter);
-        }
-      }
-
-    }
-    return msg;
-    */
-    //antes
   }
-
 }
