@@ -70,8 +70,6 @@
 
   event void AMControl.startDone(error_t err) {
     if (err == SUCCESS) {
-      // TODO: Register with server
-
       if(TOS_NODE_ID >= 100){
 
         radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
@@ -98,15 +96,12 @@
           busy = TRUE;
           dbg("debug", "< %2d:%02d:%02d %02d/%02d/%d> Register message sent with coordinates x: %d and y: %d.\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year, rpkt->x, rpkt->y);
         }
-        //call SensorsTimer.startPeriodic(T_MEASURE);
         call SmokeTimer.startPeriodic(50000);
       }
       else if(0 == TOS_NODE_ID){
         call SmokeTimer.startPeriodic(T_ALIVE_MEASURE);
       }
-     /* else if(0 < TOS_NODE_ID && TOS_NODE_ID < 100) {
-        msg_q = (radio_msg*) malloc(sizeof(radio_msg) * 10000);
-      }*/
+
     }
     else {
       call AMControl.start();
@@ -117,7 +112,6 @@
   }
 
   event void SmokeTimer.fired() {
-    //dbg("debug", "****************** SMOKE TIMER FIRED ******************\n");
     if(TOS_NODE_ID >= 100){
       if(registered){
         if (!busy && (call smokeDetector.getSmoke() || smokeDetected)) {
@@ -192,10 +186,8 @@
         int etime = ts - lts;
         dbg("debug", "++++++ ETIME: %d ++++++\n", etime);
         if((etime < -50 || etime > 50) && (lts != 0)) {
-          //TODO: SEND A RE REGISTER MESSAGE - DONE
           if(!busy){
             radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-            //call SmokeTimer.stop();
             rpkt->msg_type = RE_REGISTER;        
             rpkt->dest = i;
             
@@ -216,14 +208,9 @@
         }
       }
     }
-    else {
-      dbg("debug", "############### IM ALIVE ############### MSG_Q_CNT: %d\n", msg_q_cnt);
-      call SmokeTimer.stop();
-    }
   }
  
   event void SensorsTimer.fired() {
-    //dbg("debug", "SENSOR TIMER FIRED\n");
     if (!busy) {
   		radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
    		rpkt->nodeid = TOS_NODE_ID;
@@ -280,55 +267,31 @@
   event void AMSend.sendDone(message_t* msg, error_t error) {
     if ((&pkt == msg) || (&pktQ == msg)) {
       busy = FALSE;     
-      //dbg("debug", "[SEND_DONE].\n");
       if(!busy && msg_q_cnt > 0) {
         int ind = msg_q_cnt - 1;
         radio_msg* rpkt = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
         dbg("debug", "[SEND DONE -> QUEUE] Number of messages in queue: %d\n", msg_q_cnt);
-        //dbg("debug", "[SEND_DONE] 1\n");
         rpkt->msg_type = msg_q[ind].msg_type;
-        //dbg("debug", "[SEND_DONE] 2\n");
         rpkt->nodeid = msg_q[ind].nodeid;
-        //dbg("debug", "[SEND_DONE] 3\n");
         rpkt->dest = msg_q[ind].dest;
-        //dbg("debug", "[SEND_DONE] 4\n");
         rpkt->counter = msg_q[ind].counter;
-        //dbg("debug", "[SEND_DONE] 5\n");
         rpkt->randvalue = msg_q[ind].randvalue;
-        //dbg("debug", "[SEND_DONE] 6\n");
         rpkt->routingNode = msg_q[ind].routingNode;
-        //dbg("debug", "[SEND_DONE] 7\n");
         rpkt->seconds = msg_q[ind].seconds;
-        //dbg("debug", "[SEND_DONE] 8\n");
         rpkt->minutes = msg_q[ind].minutes;
-        //dbg("debug", "[SEND_DONE] 9\n");
         rpkt->hour = msg_q[ind].hour;
-        //dbg("debug", "[SEND_DONE] 10\n");
         rpkt->day = msg_q[ind].day;
-        //dbg("debug", "[SEND_DONE] 11\n");
         rpkt->month = msg_q[ind].month;
-        //dbg("debug", "[SEND_DONE] 12\n");
         rpkt->year = msg_q[ind].year;
-        //dbg("debug", "[SEND_DONE] 13\n");
         rpkt->x = msg_q[ind].x;
-        //dbg("debug", "[SEND_DONE] 14\n");
         rpkt->y = msg_q[ind].y;
-        //dbg("debug", "[SEND_DONE] 15\n");        
         rpkt->humidity = msg_q[ind].humidity;
-        //dbg("debug", "[SEND_DONE] 16\n");
         rpkt->temperature = msg_q[ind].temperature;
-        //dbg("debug", "[SEND_DONE] 17\n");
         rpkt->smoke = msg_q[ind].smoke;
-        //dbg("debug", "[SEND_DONE] 18\n");
         msg_q_cnt--;
-        //dbg("debug", "[SEND_DONE] 19\n");
-
-        //dbg("debug", "[SEND_DONE] QUEUE HAS MESSAGES\n");
-
         if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
           busy = TRUE;
           dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SEND DONE -> QUEUE] MESSAGE QUEUE SENT *****TYPE***** : %d  *****DEST***** : %d\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->msg_type, rpkt->dest);
-          //dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [SEND_DONE] Message sent from queue\n", (info->tm_hour+BST), info->tm_min, info->tm_sec, info->tm_mday, info->tm_mon+1, 1900 + info->tm_year);
         }
       }
     }
@@ -336,10 +299,8 @@
 
   event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len) {
 
-    //dbg("debug", "[MSG RECEIVED] INIT\n");
     if (len == sizeof(radio_msg)) {
       radio_msg* rpkt = (radio_msg*)payload;
-      //dbg("debug", "[MSG RECEIVED] msg_type: %d\n", rpkt->msg_type);
 
       if(rpkt->msg_type == UN_ASSIGN_SNODE){
         if(rpkt->dest == TOS_NODE_ID){
@@ -461,7 +422,6 @@
         }
       }
       else if(rpkt->msg_type == ASSIGN_SNODE){
-        //dbg("debug", "[RECEIVED ASSIGN MODE]\n");
         if(TOS_NODE_ID <= 99 && TOS_NODE_ID >= 1){
           //verifica se o timestamp e mais recente que o da ultima mensagem recebida
           int timestampMsg = rpkt->hour*10000 + rpkt->minutes*100 + rpkt->seconds;
@@ -620,7 +580,6 @@
         }
       }
       else if(rpkt->msg_type == SIMULATE_FIRE){
-        //dbg("debug", "RECEIVED FIRE!!!!\n");
         smokeDetected = TRUE;
         if (!busy) {
           radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
@@ -690,7 +649,6 @@
               int i;
               bool mine = FALSE;
               int id = rpkt->nodeid;
-              //dbg("debug", "++++++++ COUNTER: %d ++++++++\n", rpkt->counter);
               for(i=0; i<100; i++){
                 if(mySensorNodes[i] == id){
                   mine = TRUE;
@@ -803,7 +761,6 @@
             registeredNodes[rpkt->nodeid] = rpkt->routingNode;
             positionXSensorNodes[rpkt->nodeid] = rpkt->x;
             positionYSensorNodes[rpkt->nodeid] = rpkt->y;
-            //dbg("debug", "routingNode: %d\n", rpkt->routingNode);
             dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [REGISTER] Sensor Node %d registered with positions x: %d and y: %d\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y);
             dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d registered with positions x: %d and y: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y);
             //envia mensagem ao routing node a dizer que ficou com aquele sensor node
@@ -878,7 +835,6 @@
             if(!busy){
 
               radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-              //dbg("debug", "[REGISTER -> RN] RN: %d\n", TOS_NODE_ID);
               rpktR->msg_type = rpkt->msg_type;        
               rpktR->nodeid = rpkt->nodeid;
               rpktR->dest = rpkt->dest;
@@ -902,7 +858,6 @@
               // Smoke information
               msg_q[msg_q_cnt].smoke=0;
 
-              //dbg("debug", "COUNTER: %d\n", rpkt->counter);
               if(rpkt->counter == 0){
                 //randValue 0 e 200
                 uint8_t rv = rand()%201;
@@ -949,7 +904,6 @@
               // Smoke information
               msg_q[msg_q_cnt].smoke=0;
 
-              //dbg("debug", "COUNTER: %d\n", rpkt->counter);
               if(rpkt->counter == 0){
                 //randValue 0 e 200
                 uint8_t rv = rand()%201;
@@ -980,7 +934,6 @@
           if((timestampMsg > lastTimeStamp[rpkt->nodeid]) || ((dateMsg > lastDate[rpkt->nodeid]) && (lastDate[rpkt->nodeid] != 0))) {
             lastTimeStamp[rpkt->nodeid] = timestampMsg;
             lastDate[rpkt->nodeid] = dateMsg;
-            //dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
             if(TOS_NODE_ID == 0)
             {
               dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [MEASURE] Sensor Node %d located at x: %d and y: %d measured humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->humidity, rpkt->temperature);
@@ -992,7 +945,6 @@
               int i;
               bool mine = FALSE;
               int id = rpkt->nodeid;
-              //dbg("debug", "++++++++ COUNTER: %d ++++++++\n", rpkt->counter);
               for(i=0; i<100; i++){
                 if(mySensorNodes[i] == id){
                   mine = TRUE;
@@ -1026,56 +978,6 @@
               }
             }
           }
-          //tempo (horas) recebido e menor que o da ultima mensagem
-          /*else
-          {
-            //vai ver a data, se a data recebida for maior guarda esses novos valores no log
-            if((dateMsg > lastDate[rpkt->nodeid]) && (lastDate[rpkt->nodeid] != 0)){
-              lastTimeStamp[rpkt->nodeid] = timestampMsg;
-              lastDate[rpkt->nodeid] = dateMsg;
-              //dbg("debug", "Sensor Node %d mesure of humidity: %d%% and temperature: %d at %2d:%02d:%02d %02d/%02d/%d\n", rpkt->nodeid, rpkt->humidity, rpkt->temperature, rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year);
-              if(TOS_NODE_ID == 0)
-              {
-                dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [MEASURE] Sensor Node %d located at x: %d and y: %d measured humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->humidity, rpkt->temperature);
-                dbg("log", "<%2d:%02d:%02d %02d/%02d/%d> Sensor Node %d located at x: %d and y: %d measured humidity: %d%% and temperature: %d.\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, rpkt->nodeid, rpkt->x, rpkt->y, rpkt->humidity, rpkt->temperature);
-              }
-              else
-              {              
-                int i;
-                bool mine = FALSE;
-                int id = rpkt->nodeid;
-                //dbg("debug", "++++++++ COUNTER: %d ++++++++\n", rpkt->counter);
-                for(i=0; i<100; i++){
-                  if(mySensorNodes[i] == id){
-                    mine = TRUE;
-                    break;
-                  }
-                }
-                if(!busy && ((mine && rpkt->counter == 0) || (rpkt->counter > 0 && !mine))) {
-                  radio_msg* rpktR = (radio_msg*)(call Packet.getPayload(&pkt, sizeof (radio_msg)));
-
-                  rpktR->msg_type = rpkt->msg_type;        
-                  rpktR->nodeid = rpkt->nodeid;
-                  rpktR->dest = rpkt->dest;
-                  
-                  rpktR->seconds = rpkt->seconds;
-                  rpktR->minutes = rpkt->minutes;
-                  rpktR->hour = rpkt->hour;
-                  rpktR->day = rpkt->day;
-                  rpktR->month = rpkt->month;
-                  rpktR->year = rpkt->year;
-
-                  rpktR->humidity = rpkt->humidity;
-                  rpktR->temperature = rpkt->temperature;
-
-                  if (call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(radio_msg)) == SUCCESS) {
-                    busy = TRUE;
-                    dbg("debug", "<%2d:%02d:%02d %02d/%02d/%d> [MEASURE] Message Sent from %d to %d (init in sensorNode %d).\n", rpkt->hour, rpkt->minutes, rpkt->seconds, rpkt->day, rpkt->month, rpkt->year, TOS_NODE_ID, rpktR->dest, rpktR->nodeid);
-                  }
-                }
-              }
-            }
-          }*/
         }
       }
     }
